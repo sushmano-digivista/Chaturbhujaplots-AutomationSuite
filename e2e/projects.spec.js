@@ -51,9 +51,10 @@ test.describe('Contact Tab — MongoDB Values', () => {
 
   test('Aparna Legacy address has Gateway of Amaravati', async ({ page }) => {
     await goTo(page, 'aparna')
+    // Wait for MongoDB settings to fully load before clicking Contact
+    await page.waitForTimeout(3000)
     await page.getByRole('button', { name: 'Contact' }).click()
-    // Address comes from MongoDB settings — wait for it to load
-    await page.waitForTimeout(2000)
+    await page.waitForTimeout(1000)
     await expect(page.getByText(/Gateway of Amaravati/i)).toBeVisible({ timeout: 10000 })
   })
 
