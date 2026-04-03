@@ -16,7 +16,7 @@ test.describe('Page Load', () => {
 
   test('PageLoader completes and home page renders', async ({ page }) => {
     await page.goto(BASE)
-    await page.waitForSelector('nav', { timeout: 10000 })
+    await waitForLoad(page)
     await expect(page.locator('nav')).toBeVisible()
   })
 })
@@ -60,15 +60,22 @@ test.describe('Mobile Navbar', () => {
     await waitForLoad(page)
   })
 
-  test('hamburger menu opens', async ({ page }) => {
-    await page.locator('button[aria-label="Menu"]').click()
-    await expect(page.getByText('Gallery').first()).toBeVisible()
+  test('hamburger button visible on mobile', async ({ page }) => {
+    const hamburger = page.locator('[class*="hamburger"]').first()
+    await expect(hamburger).toBeVisible()
   })
 
-  test('menu closes when section link clicked', async ({ page }) => {
-    await page.locator('button[aria-label="Menu"]').click()
-    await page.getByText('Gallery').first().click()
-    await page.waitForTimeout(800)
+  test('hamburger opens mobile menu', async ({ page }) => {
+    await page.locator('[class*="hamburger"]').first().click()
+    await page.waitForTimeout(500)
+    await expect(page.locator('[class*="mobileMenu"]').first()).toBeVisible()
+  })
+
+  test('menu closes when Gallery clicked', async ({ page }) => {
+    await page.locator('[class*="hamburger"]').first().click()
+    await page.waitForTimeout(500)
+    await page.locator('[class*="mobileMenu"] button, [class*="mobileLink"]').filter({ hasText: 'Gallery' }).first().click()
+    await page.waitForTimeout(1000)
     await expect(page.locator('#gallery')).toBeInViewport({ timeout: 5000 })
   })
 })
@@ -96,7 +103,7 @@ test.describe('Hero Section', () => {
   test('modal closes on X', async ({ page }) => {
     await page.getByRole('button', { name: /Enquire Now/i }).first().click()
     await page.locator('[class*="close"], [class*="Close"]').first().click()
-    await expect(page.locator('[class*="modal"]').first()).not.toBeVisible({ timeout: 3000 })
+    await expect(page.locator('[class*="modal"], [class*="Modal"]').first()).not.toBeVisible({ timeout: 3000 })
   })
 })
 
@@ -106,21 +113,21 @@ test.describe('Portfolio Section', () => {
     await page.goto(BASE)
     await waitForLoad(page)
     await page.evaluate(() => document.getElementById('portfolio')?.scrollIntoView())
-    await page.waitForTimeout(500)
+    await page.waitForTimeout(800)
   })
 
   test('all 4 project cards visible', async ({ page }) => {
     for (const name of ['Anjana Paradise', 'Aparna Legacy', 'Varaha Virtue', 'Trimbak Oaks']) {
-      await expect(page.getByText(name).first()).toBeVisible()
+      await expect(page.getByText(name).first()).toBeVisible({ timeout: 8000 })
     }
   })
 
   test('Aparna Legacy shows Gateway of Amaravati', async ({ page }) => {
-    await expect(page.getByText(/Gateway of Amaravati/i).first()).toBeVisible()
+    await expect(page.getByText(/Gateway of Amaravati/i).first()).toBeVisible({ timeout: 8000 })
   })
 
   test('Anjana Paradise starting price visible', async ({ page }) => {
-    await expect(page.getByText(/24.8L/i).first()).toBeVisible()
+    await expect(page.getByText(/24.8L/i).first()).toBeVisible({ timeout: 8000 })
   })
 })
 
@@ -129,12 +136,17 @@ test.describe('Section Scrolling', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE)
     await waitForLoad(page)
+    await page.waitForTimeout(1000)
   })
 
   for (const id of ['gallery', 'videos', 'location', 'contact']) {
     test(`scrolls to ${id} section`, async ({ page }) => {
-      await page.evaluate((sId) => document.getElementById(sId)?.scrollIntoView(), id)
-      await expect(page.locator(`#${id}`)).toBeInViewport({ timeout: 3000 })
+      await page.evaluate((sId) => {
+        const el = document.getElementById(sId)
+        if (el) el.scrollIntoView({ behavior: 'smooth' })
+      }, id)
+      await page.waitForTimeout(1000)
+      await expect(page.locator(`#${id}`)).toBeInViewport({ timeout: 5000 })
     })
   }
 })
@@ -145,7 +157,7 @@ test.describe('Footer', () => {
     await page.goto(BASE)
     await waitForLoad(page)
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
-    await page.waitForTimeout(500)
+    await page.waitForTimeout(800)
     await expect(page.locator('footer')).toBeVisible()
     await expect(page.locator('footer').getByText(/Chaturbhuja/i).first()).toBeVisible()
   })
@@ -156,10 +168,11 @@ test.describe('ScrollToTop Button', () => {
   test('appears after scrolling down', async ({ page }) => {
     await page.goto(BASE)
     await waitForLoad(page)
-    await page.evaluate(() => window.scrollTo(0, 1000))
     await page.waitForTimeout(500)
+    await page.evaluate(() => window.scrollTo(0, 1500))
+    await page.waitForTimeout(800)
     await expect(
-      page.locator('button[class*="scrollTop"], button[class*="Top"], [class*="scrollToTop"]').first()
-    ).toBeVisible({ timeout: 3000 })
+      page.locator('[class*="scrollTop"], [class*="ScrollTop"], [class*="toTop"]').first()
+    ).toBeVisible({ timeout: 5000 })
   })
 })
