@@ -136,9 +136,10 @@ test.describe('Section Scrolling', () => {
 
   for (const id of ['gallery', 'videos', 'location', 'contact']) {
     test(`scrolls to ${id} section`, async ({ page }) => {
-      await page.evaluate((sId) => document.getElementById(sId)?.scrollIntoView({ behavior: 'smooth' }), id)
-      await page.waitForTimeout(1500)
-      await expect(page.locator(`#${id}`)).toBeInViewport({ timeout: 8000 })
+      // Use instant scroll (not smooth) to avoid slowMo interference
+      await page.evaluate((sId) => document.getElementById(sId)?.scrollIntoView({ behavior: 'instant' }), id)
+      await page.waitForTimeout(2000)
+      await expect(page.locator(`#${id}`)).toBeInViewport({ timeout: 10000 })
     })
   }
 })
