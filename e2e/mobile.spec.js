@@ -87,10 +87,11 @@ test.describe('Mobile Portfolio', () => {
   })
 
   test('tapping Anjana Paradise navigates to project', async ({ page }) => {
-    // Click the project card container
-    const card = page.locator('[class*="projCard"], [class*="card"]').filter({ hasText: 'Anjana Paradise' }).first()
-    await card.click({ force: true })
-    await expect(page).toHaveURL(/\/project\/anjana/, { timeout: 8000 })
+    // Find and click any element containing Anjana Paradise text in portfolio
+    await page.locator('[class*="cardName"]').filter({ hasText: 'Anjana Paradise' }).first().scrollIntoViewIfNeeded()
+    await page.waitForTimeout(500)
+    await page.locator('[class*="cardName"]').filter({ hasText: 'Anjana Paradise' }).first().click({ force: true, timeout: 5000 })
+    await expect(page).toHaveURL(/\/project\/anjana/, { timeout: 10000 })
   })
 })
 
