@@ -1,0 +1,18 @@
+{
+  "name": "chaturbhujaplots-automation-suite",
+  "version": "1.0.0",
+  "description": "E2E Automation Test Suite for Chaturbhuja Plots website",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:mobile": "playwright test e2e/mobile.spec.js",
+    "test:homepage": "playwright test e2e/homepage.spec.js",
+    "test:projects": "playwright test e2e/projects.spec.js",
+    "test:report": "playwright show-report",
+    "test:debug": "playwright test --debug"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0"
+  }
+}
