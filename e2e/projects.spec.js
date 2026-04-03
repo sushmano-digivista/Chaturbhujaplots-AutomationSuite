@@ -51,11 +51,11 @@ test.describe('Contact Tab — MongoDB Values', () => {
 
   test('Aparna Legacy address has Gateway of Amaravati', async ({ page }) => {
     await goTo(page, 'aparna')
-    // Wait for MongoDB settings to fully load before clicking Contact
-    await page.waitForTimeout(3000)
     await page.getByRole('button', { name: 'Contact' }).click()
-    await page.waitForTimeout(1000)
-    await expect(page.getByText(/Gateway of Amaravati/i)).toBeVisible({ timeout: 10000 })
+    // Poll every second until address appears (MongoDB settings can take up to 5s)
+    await expect(async () => {
+      await expect(page.getByText(/Gateway of Amaravati/i)).toBeVisible()
+    }).toPass({ timeout: 15000, intervals: [1000, 2000, 3000] })
   })
 
   test('all projects show WhatsApp Chat button', async ({ page }) => {
