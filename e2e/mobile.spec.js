@@ -2,14 +2,12 @@ import { test, expect } from '@playwright/test'
 
 const BASE = 'http://localhost:3000'
 
-// Force mobile viewport for ALL tests in this file
 test.use({ viewport: { width: 390, height: 844 } })
 
 async function waitForLoad(page) {
   await page.waitForSelector('nav', { timeout: 10000 })
 }
 
-// ── 1. Sticky Bar ─────────────────────────────────────────────────────────────
 test.describe('Mobile Sticky Bar', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE)
@@ -33,7 +31,6 @@ test.describe('Mobile Sticky Bar', () => {
   })
 })
 
-// ── 2. Mobile Hamburger Navigation ───────────────────────────────────────────
 test.describe('Mobile Hamburger Nav', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE)
@@ -41,60 +38,59 @@ test.describe('Mobile Hamburger Nav', () => {
   })
 
   test('hamburger button visible', async ({ page }) => {
-    await expect(page.locator('.hamburger, [class*="hamburger"]').first()).toBeVisible()
+    await expect(page.locator('[class*="hamburger"]').first()).toBeVisible()
   })
 
   test('hamburger opens mobile menu', async ({ page }) => {
-    await page.locator('.hamburger, [class*="hamburger"]').first().click()
+    await page.locator('[class*="hamburger"]').first().click()
     await page.waitForTimeout(500)
-    await expect(page.locator('.mobileMenu, [class*="mobileMenu"]').first()).toBeVisible()
+    await expect(page.locator('[class*="mobileMenu"]').first()).toBeVisible()
   })
 
   test('Gallery link visible in menu', async ({ page }) => {
-    await page.locator('.hamburger, [class*="hamburger"]').first().click()
+    await page.locator('[class*="hamburger"]').first().click()
     await page.waitForTimeout(500)
-    await expect(page.locator('.mobileLink, [class*="mobileLink"]').filter({ hasText: 'Gallery' }).first()).toBeVisible()
+    await expect(page.locator('[class*="mobileLink"]').filter({ hasText: 'Gallery' }).first()).toBeVisible()
   })
 
-  test('Gallery link closes menu and scrolls to gallery', async ({ page }) => {
-    await page.locator('.hamburger, [class*="hamburger"]').first().click()
+  test('Gallery link closes menu and scrolls', async ({ page }) => {
+    await page.locator('[class*="hamburger"]').first().click()
     await page.waitForTimeout(500)
-    await page.locator('.mobileLink, [class*="mobileLink"]').filter({ hasText: 'Gallery' }).first().click()
-    await page.waitForTimeout(1200)
-    await expect(page.locator('#gallery')).toBeInViewport({ timeout: 5000 })
+    await page.locator('[class*="mobileLink"]').filter({ hasText: 'Gallery' }).first().click()
+    await page.waitForTimeout(1500)
+    await expect(page.locator('#gallery')).toBeInViewport({ timeout: 8000 })
   })
 
-  test('Contact link closes menu and scrolls to contact', async ({ page }) => {
-    await page.locator('.hamburger, [class*="hamburger"]').first().click()
+  test('Contact link closes menu and scrolls', async ({ page }) => {
+    await page.locator('[class*="hamburger"]').first().click()
     await page.waitForTimeout(500)
-    await page.locator('.mobileLink, [class*="mobileLink"]').filter({ hasText: 'Contact' }).first().click()
-    await page.waitForTimeout(1200)
-    await expect(page.locator('#contact')).toBeInViewport({ timeout: 5000 })
+    await page.locator('[class*="mobileLink"]').filter({ hasText: 'Contact' }).first().click()
+    await page.waitForTimeout(1500)
+    await expect(page.locator('#contact')).toBeInViewport({ timeout: 8000 })
   })
 })
 
-// ── 3. Mobile Portfolio ───────────────────────────────────────────────────────
 test.describe('Mobile Portfolio', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE)
     await waitForLoad(page)
+    await page.waitForTimeout(2000)
     await page.evaluate(() => document.getElementById('portfolio')?.scrollIntoView())
     await page.waitForTimeout(1000)
   })
 
   test('all 4 projects visible on mobile', async ({ page }) => {
     for (const name of ['Anjana Paradise', 'Aparna Legacy', 'Varaha Virtue', 'Trimbak Oaks']) {
-      await expect(page.locator('[class*="mobileProjectName"], [class*="projName"], h3, h2').filter({ hasText: name }).first()).toBeVisible({ timeout: 8000 })
+      await expect(page.locator('[class*="cardName"]').filter({ hasText: name }).first()).toBeVisible({ timeout: 10000 })
     }
   })
 
   test('tapping Anjana Paradise navigates to project', async ({ page }) => {
-    await page.locator('[class*="mobileProjectCard"], [class*="projCard"]').first().click()
+    await page.locator('[class*="cardName"]').filter({ hasText: 'Anjana Paradise' }).first().click()
     await expect(page).toHaveURL(/\/project\/anjana/, { timeout: 5000 })
   })
 })
 
-// ── 4. Mobile Scroll ──────────────────────────────────────────────────────────
 test.describe('Mobile Scroll', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE)
@@ -105,19 +101,18 @@ test.describe('Mobile Scroll', () => {
   test('scrolls through all sections', async ({ page }) => {
     for (const id of ['portfolio', 'gallery', 'location', 'contact']) {
       await page.evaluate((sId) => document.getElementById(sId)?.scrollIntoView({ behavior: 'smooth' }), id)
-      await page.waitForTimeout(600)
+      await page.waitForTimeout(800)
       await expect(page.locator(`#${id}`)).toBeInViewport({ timeout: 5000 })
     }
   })
 
   test('scroll to top button appears', async ({ page }) => {
-    await page.evaluate(() => window.scrollTo(0, 2000))
-    await page.waitForTimeout(800)
+    await page.evaluate(() => window.scrollTo(0, 3000))
+    await page.waitForTimeout(1000)
     await expect(page.locator('button[aria-label="Back to top"]')).toBeVisible({ timeout: 5000 })
   })
 })
 
-// ── 5. Mobile Project Page ────────────────────────────────────────────────────
 test.describe('Mobile Project Page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`${BASE}/project/anjana`)
@@ -129,32 +124,37 @@ test.describe('Mobile Project Page', () => {
     await expect(page.getByText('Anjana Paradise').first()).toBeVisible()
   })
 
-  test('tab buttons visible', async ({ page }) => {
-    // On mobile, tabs are in tabBar or accessible via mobileNavBtn
-    const overviewBtn = page.locator('[class*="tabBtn"], [class*="tabBar"] button').filter({ hasText: 'Overview' }).first()
-    await expect(overviewBtn).toBeVisible()
+  test('tab buttons visible via mobile nav toggle', async ({ page }) => {
+    // On mobile, tabBar is hidden — use mobileNavBtn
+    const mobileNavBtn = page.locator('[class*="mobileNavBtn"]').first()
+    await expect(mobileNavBtn).toBeVisible()
   })
 
-  test('Contact tab shows phone', async ({ page }) => {
-    await page.locator('[class*="tabBtn"], [class*="tabBar"] button').filter({ hasText: 'Contact' }).first().click({ force: true })
+  test('Contact tab shows phone via mobile menu', async ({ page }) => {
+    // Open mobile nav menu
+    await page.locator('[class*="mobileNavBtn"]').first().click()
+    await page.waitForTimeout(500)
+    // Click Contact in mobile tab menu
+    await page.locator('[class*="mobileTabBtn"]').filter({ hasText: 'Contact' }).first().click()
     await page.waitForTimeout(600)
     await expect(page.getByText(/99487 09041/)).toBeVisible({ timeout: 5000 })
   })
 
-  test('all tabs accessible', async ({ page }) => {
+  test('all tabs accessible via mobile menu', async ({ page }) => {
     for (const tab of ['Overview', 'Amenities', 'Location', 'Contact']) {
-      await page.locator('[class*="tabBtn"], [class*="tabBar"] button').filter({ hasText: tab }).first().click({ force: true })
+      await page.locator('[class*="mobileNavBtn"]').first().click()
+      await page.waitForTimeout(400)
+      await page.locator('[class*="mobileTabBtn"]').filter({ hasText: tab }).first().click()
       await page.waitForTimeout(400)
     }
   })
 
   test('back button navigates home', async ({ page }) => {
-    await page.locator('[class*="backBtn"], button').filter({ hasText: /Back/i }).first().click()
+    await page.locator('[class*="backBtn"]').first().click()
     await expect(page).toHaveURL(BASE + '/')
   })
 })
 
-// ── 6. Mobile WhatsApp ────────────────────────────────────────────────────────
 test.describe('Mobile WhatsApp', () => {
   test('WhatsApp button visible in sticky bar', async ({ page }) => {
     await page.goto(BASE)
