@@ -50,15 +50,16 @@ test.describe('Contact Tab — MongoDB Values', () => {
   })
 
   test('Aparna Legacy address has Gateway of Amaravati', async ({ page }) => {
-    await goTo(page, 'aparna')
-    // Wait for settings API to respond before clicking Contact
-    await page.waitForResponse(
+    // Set up response listener BEFORE navigation so we don't miss it
+    const settingsLoaded = page.waitForResponse(
       res => res.url().includes('/settings/contact') && res.status() === 200,
       { timeout: 15000 }
     )
+    await goTo(page, 'aparna')
+    await settingsLoaded
     await page.getByRole('button', { name: 'Contact' }).click()
-    await page.waitForTimeout(1000)
-    await expect(page.getByText(/Gateway of Amaravati/i)).toBeVisible({ timeout: 5000 })
+    await page.waitForTimeout(800)
+    await expect(page.getByText(/Gateway of Amaravati/i)).toBeVisible({ timeout: 8000 })
   })
 
   test('all projects show WhatsApp Chat button', async ({ page }) => {
