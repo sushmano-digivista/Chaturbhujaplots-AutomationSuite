@@ -52,15 +52,10 @@ test.describe('Contact Tab — MongoDB Values', () => {
   test('Aparna Legacy address has Gateway of Amaravati', async ({ page }) => {
     await goTo(page, 'aparna')
     await page.getByRole('button', { name: 'Contact' }).click()
-    await page.waitForTimeout(5000)
-    // Debug: log all text on page
-    const bodyText = await page.locator('[class*="contactRow"], [class*="contactInfo"]').allInnerTexts()
-    console.log('Contact section text:', JSON.stringify(bodyText))
-    // Check both possible sources — projects collection OR settings collection
-    const hasGateway = await page.getByText(/Gateway of Amaravati/i).count()
-    const hasKanchikacherla = await page.getByText(/Kanchikacherla/i).count()
-    console.log('Gateway count:', hasGateway, 'Kanchikacherla count:', hasKanchikacherla)
-    await expect(page.getByText(/Kanchikacherla/i).or(page.getByText(/Gateway of Amaravati/i)).first()).toBeVisible({ timeout: 5000 })
+    await page.waitForTimeout(3000)
+    // Address is in contactRow — check the div containing the address text
+    const addressRow = page.locator('[class*="contactRow"]').filter({ hasText: /Gateway of Amaravati/i }).first()
+    await expect(addressRow).toBeVisible({ timeout: 8000 })
   })
 
   test('all projects show WhatsApp Chat button', async ({ page }) => {
