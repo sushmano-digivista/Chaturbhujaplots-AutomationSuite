@@ -6,7 +6,7 @@ import { defineConfig, devices } from '@playwright/test'
  *   TARGET_URL=https://www.chaturbhujaplots.in npx playwright test
  */
 export default defineConfig({
-  testDir:  './tests/e2e',
+  testDir:  './e2e',
   timeout:  30000,
   retries:  1,
   workers:  1,
@@ -25,9 +25,16 @@ export default defineConfig({
       use:  { ...devices['Desktop Chrome'] },
     },
     {
-      name: 'Mobile iPhone 14',
+      name: 'Desktop Chrome Slow',
+      use:  { ...devices['Desktop Chrome'], launchOptions: { slowMo: 100 } },
+    },
+    {
+      name: 'Mobile Chrome',
+      use:  { ...devices['Pixel 5'] },
+    },
+    {
+      name: 'Mobile Safari',
       use:  { ...devices['iPhone 14'] },
-      testMatch: '**/mobile*.spec.js',
     },
   ],
 

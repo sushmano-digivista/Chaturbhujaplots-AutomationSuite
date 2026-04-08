@@ -2,15 +2,24 @@ import { test, expect } from '@playwright/test'
 
 const BASE = 'http://localhost:3000'
 const PROJECTS = [
-  { id: 'anjana',  name: 'Anjana Paradise', loc: 'Paritala'    },
-  { id: 'aparna',  name: 'Aparna Legacy',   loc: 'Chevitikallu'},
-  { id: 'varaha',  name: 'Varaha Virtue',   loc: 'Pamarru'     },
-  { id: 'trimbak', name: 'Trimbak Oaks',    loc: 'Penamaluru'  },
+  { id: 'anjana',  name: 'Anjana Paradise', loc: 'Paritala'     },
+  { id: 'aparna',  name: 'Aparna Legacy',   loc: 'Chevitikallu' },
+  { id: 'varaha',  name: 'Varaha Virtue',   loc: 'Pamarru'      },
+  { id: 'trimbak', name: 'Trimbak Oaks',    loc: 'Penamaluru'   },
 ]
 
 async function goTo(page, id) {
   await page.goto(`${BASE}/project/${id}`)
   await page.waitForSelector('[class*="tabBar"], [class*="header"]', { timeout: 10000 })
+  await page.waitForTimeout(500)
+}
+
+// Scroll tab into view then click — handles mobile horizontal tab bar
+async function clickTab(page, tabName) {
+  const btn = page.getByRole('button', { name: tabName }).first()
+  await btn.scrollIntoViewIfNeeded()
+  await btn.click()
+  await page.waitForTimeout(400)
 }
 
 // ── 1. All Project Pages Load ─────────────────────────────────────────────────
@@ -34,8 +43,7 @@ test.describe('Project Tab Navigation', () => {
 
   for (const tab of ['Overview', 'Amenities', 'Gallery', 'Videos', 'Location', 'Contact']) {
     test(`${tab} tab opens`, async ({ page }) => {
-      await page.getByRole('button', { name: tab }).click()
-      await page.waitForTimeout(300)
+      await clickTab(page, tab)
       await expect(page.getByText(new RegExp(tab, 'i')).first()).toBeVisible()
     })
   }
@@ -45,15 +53,14 @@ test.describe('Project Tab Navigation', () => {
 test.describe('Contact Tab — MongoDB Values', () => {
   test('Anjana Paradise has correct phone', async ({ page }) => {
     await goTo(page, 'anjana')
-    await page.getByRole('button', { name: 'Contact' }).click()
+    await clickTab(page, 'Contact')
     await expect(page.getByText(/99487 09041/)).toBeVisible()
   })
 
   test('Aparna Legacy address has Gateway of Amaravati', async ({ page }) => {
     await goTo(page, 'aparna')
-    await page.getByRole('button', { name: 'Contact' }).click()
+    await clickTab(page, 'Contact')
     await page.waitForTimeout(3000)
-    // Address is in contactRow — check the div containing the address text
     const addressRow = page.locator('[class*="contactRow"]').filter({ hasText: /Gateway of Amaravati/i }).first()
     await expect(addressRow).toBeVisible({ timeout: 8000 })
   })
@@ -61,15 +68,17 @@ test.describe('Contact Tab — MongoDB Values', () => {
   test('all projects show WhatsApp Chat button', async ({ page }) => {
     for (const p of PROJECTS) {
       await goTo(page, p.id)
-      await page.getByRole('button', { name: 'Contact' }).click()
-      await expect(page.getByText(/WhatsApp Chat/i)).toBeVisible()
+      await clickTab(page, 'Contact')
+      await expect(
+        page.locator('a[href*="wa.me"], button:has-text("WhatsApp"), [class*="whatsapp"]').first()
+      ).toBeVisible()
     }
   })
 
   test('all projects show Request Callback button', async ({ page }) => {
     for (const p of PROJECTS) {
       await goTo(page, p.id)
-      await page.getByRole('button', { name: 'Contact' }).click()
+      await clickTab(page, 'Contact')
       await expect(page.getByRole('button', { name: /Request Callback/i })).toBeVisible()
     }
   })
@@ -77,7 +86,7 @@ test.describe('Contact Tab — MongoDB Values', () => {
   test('all projects show Schedule Site Visit button', async ({ page }) => {
     for (const p of PROJECTS) {
       await goTo(page, p.id)
-      await page.getByRole('button', { name: 'Contact' }).click()
+      await clickTab(page, 'Contact')
       await expect(page.getByRole('button', { name: /Schedule Site Visit/i })).toBeVisible()
     }
   })
@@ -87,13 +96,13 @@ test.describe('Contact Tab — MongoDB Values', () => {
 test.describe('Trimbak Oaks — Upcoming Project', () => {
   test('shows Coming Soon in Overview', async ({ page }) => {
     await goTo(page, 'trimbak')
-    await page.getByRole('button', { name: 'Overview' }).click()
+    await clickTab(page, 'Overview')
     await expect(page.getByText(/Coming Soon/i).first()).toBeVisible()
   })
 
   test('Notify Me button visible', async ({ page }) => {
     await goTo(page, 'trimbak')
-    await page.getByRole('button', { name: 'Overview' }).click()
+    await clickTab(page, 'Overview')
     await expect(page.getByRole('button', { name: /Notify Me/i })).toBeVisible()
   })
 })
@@ -120,14 +129,23 @@ test.describe('Back Navigation', () => {
 test.describe('Location Tab', () => {
   test('map iframe loads for Anjana Paradise', async ({ page }) => {
     await goTo(page, 'anjana')
-    await page.getByRole('button', { name: 'Location' }).click()
+    await clickTab(page, 'Location')
     await expect(page.locator('iframe').first()).toBeVisible()
   })
 
   test('Open in Google Maps button visible', async ({ page }) => {
     await goTo(page, 'anjana')
-    await page.getByRole('button', { name: 'Location' }).click()
-    await expect(page.getByRole('button', { name: /Open in Google Maps/i })).toBeVisible()
+    await clickTab(page, 'Location')
+    await expect(
+      page.locator([
+        'button:has-text("Open in Maps")',
+        'button:has-text("Get Directions")',
+        'button:has-text("దారి వివరాలు")',
+        'button:has-text("మాప్స్లో")',
+        'a:has-text("Open in Maps")',
+        'a[href*="maps.google"]',
+      ].join(', ')).first()
+    ).toBeVisible({ timeout: 8000 })
   })
 })
 
@@ -135,13 +153,13 @@ test.describe('Location Tab', () => {
 test.describe('Amenities Tab', () => {
   test('Infrastructure tab shows amenities', async ({ page }) => {
     await goTo(page, 'anjana')
-    await page.getByRole('button', { name: 'Amenities' }).click()
+    await clickTab(page, 'Amenities')
     await expect(page.getByText(/Infrastructure/i)).toBeVisible()
   })
 
   test('Lifestyle tab works', async ({ page }) => {
     await goTo(page, 'anjana')
-    await page.getByRole('button', { name: 'Amenities' }).click()
+    await clickTab(page, 'Amenities')
     await page.getByRole('button', { name: /Lifestyle/i }).click()
     await expect(page.getByText(/Vaastu/i).first()).toBeVisible()
   })

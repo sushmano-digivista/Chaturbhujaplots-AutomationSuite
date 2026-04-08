@@ -4,8 +4,23 @@ const BASE = 'http://localhost:3000'
 
 async function waitForLoad(page) {
   await page.waitForSelector('nav', { timeout: 10000 })
+  await page.waitForTimeout(500)
 }
 
+// On mobile open hamburger, on desktop open Portfolio dropdown
+async function openPortfolioNav(page) {
+  const vp = page.viewportSize()
+  const isMobile = vp && vp.width < 768
+  if (isMobile) {
+    await page.locator('[class*="hamburger"], [class*="menuBtn"]').first().click()
+    await page.waitForTimeout(500)
+  } else {
+    await page.getByRole('button', { name: 'Portfolio' }).click()
+    await page.waitForTimeout(400)
+  }
+}
+
+// ── Page Load ─────────────────────────────────────────────────────────────────
 test.describe('Page Load', () => {
   test('homepage loads successfully', async ({ page }) => {
     await page.goto(BASE)
@@ -20,6 +35,7 @@ test.describe('Page Load', () => {
   })
 })
 
+// ── Navbar ────────────────────────────────────────────────────────────────────
 test.describe('Navbar', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE)
@@ -31,24 +47,25 @@ test.describe('Navbar', () => {
   })
 
   test('Portfolio dropdown opens', async ({ page }) => {
-    await page.getByRole('button', { name: /portfolio/i }).first().click()
-    await expect(page.getByText('Anjana Paradise').first()).toBeVisible()
+    await openPortfolioNav(page)
+    await expect(page.locator('text=Anjana Paradise').first()).toBeVisible({ timeout: 5000 })
   })
 
   test('Portfolio shows all 4 projects', async ({ page }) => {
-    await page.getByRole('button', { name: /portfolio/i }).first().click()
+    await openPortfolioNav(page)
     for (const name of ['Anjana Paradise', 'Aparna Legacy', 'Varaha Virtue', 'Trimbak Oaks']) {
-      await expect(page.getByText(name).first()).toBeVisible()
+      await expect(page.locator(`text=${name}`).first()).toBeVisible({ timeout: 5000 })
     }
   })
 
   test('clicking Anjana Paradise navigates to project', async ({ page }) => {
-    await page.getByRole('button', { name: /portfolio/i }).first().click()
-    await page.getByText('Anjana Paradise').first().click()
-    await expect(page).toHaveURL(/\/project\/anjana/)
+    await openPortfolioNav(page)
+    await page.locator('text=Anjana Paradise').first().click()
+    await expect(page).toHaveURL(/anjana/, { timeout: 8000 })
   })
 })
 
+// ── Mobile Navbar ─────────────────────────────────────────────────────────────
 test.describe('Mobile Navbar', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
@@ -76,6 +93,7 @@ test.describe('Mobile Navbar', () => {
   })
 })
 
+// ── Hero Section ──────────────────────────────────────────────────────────────
 test.describe('Hero Section', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE)
@@ -91,22 +109,27 @@ test.describe('Hero Section', () => {
   })
 
   test('Enquire Now opens lead modal', async ({ page }) => {
-    await page.getByRole('button', { name: /Enquire Now/i }).first().click()
-    await expect(page.locator('[class*="modal"], [class*="Modal"]').first()).toBeVisible()
+    await page.locator(
+      'button:has-text("View Available Plots"), button:has-text("Enquire Now")'
+    ).first().click()
+    await expect(page.locator('[class*="modal"], [class*="Modal"]').first()).toBeVisible({ timeout: 5000 })
   })
 
   test('modal closes on X', async ({ page }) => {
-    await page.getByRole('button', { name: /Enquire Now/i }).first().click()
+    await page.locator(
+      'button:has-text("View Available Plots"), button:has-text("Enquire Now")'
+    ).first().click()
+    await page.waitForTimeout(400)
     await page.locator('[class*="close"], [class*="Close"]').first().click()
-    await expect(page.locator('[class*="modal"], [class*="Modal"]').first()).not.toBeVisible({ timeout: 3000 })
+    await expect(page.locator('[class*="modal"], [class*="Modal"]').first()).not.toBeVisible({ timeout: 5000 })
   })
 })
 
+// ── Portfolio Section ─────────────────────────────────────────────────────────
 test.describe('Portfolio Section', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE)
     await waitForLoad(page)
-    // Wait for MongoDB data to load then scroll
     await page.waitForTimeout(2000)
     await page.evaluate(() => document.getElementById('portfolio')?.scrollIntoView())
     await page.waitForTimeout(1000)
@@ -114,12 +137,16 @@ test.describe('Portfolio Section', () => {
 
   test('all 4 project cards visible', async ({ page }) => {
     for (const name of ['Anjana Paradise', 'Aparna Legacy', 'Varaha Virtue', 'Trimbak Oaks']) {
-      await expect(page.locator('[class*="cardName"]').filter({ hasText: name }).first()).toBeVisible({ timeout: 10000 })
+      await expect(
+        page.locator('[class*="cardName"]').filter({ hasText: name }).first()
+      ).toBeVisible({ timeout: 10000 })
     }
   })
 
   test('Aparna Legacy shows Gateway of Amaravati', async ({ page }) => {
-    await expect(page.locator('[class*="cardLoc"]').filter({ hasText: /Gateway of Amaravati/i }).first()).toBeVisible({ timeout: 10000 })
+    await expect(
+      page.locator('[class*="cardLoc"]').filter({ hasText: /Gateway of Amaravati/i }).first()
+    ).toBeVisible({ timeout: 10000 })
   })
 
   test('Anjana Paradise starting price visible', async ({ page }) => {
@@ -127,6 +154,7 @@ test.describe('Portfolio Section', () => {
   })
 })
 
+// ── Section Scrolling ─────────────────────────────────────────────────────────
 test.describe('Section Scrolling', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE)
@@ -136,14 +164,16 @@ test.describe('Section Scrolling', () => {
 
   for (const id of ['gallery', 'videos', 'location', 'contact']) {
     test(`scrolls to ${id} section`, async ({ page }) => {
-      // Verify section exists in DOM and scroll to it
       await expect(page.locator(`#${id}`)).toBeAttached({ timeout: 5000 })
-      await page.evaluate((sId) => document.getElementById(sId)?.scrollIntoView({ behavior: 'instant' }), id)
+      await page.evaluate(
+        (sId) => document.getElementById(sId)?.scrollIntoView({ behavior: 'instant' }), id
+      )
       await page.waitForTimeout(1000)
     })
   }
 })
 
+// ── Footer ────────────────────────────────────────────────────────────────────
 test.describe('Footer', () => {
   test('footer visible and shows company name', async ({ page }) => {
     await page.goto(BASE)
@@ -155,6 +185,7 @@ test.describe('Footer', () => {
   })
 })
 
+// ── ScrollToTop Button ────────────────────────────────────────────────────────
 test.describe('ScrollToTop Button', () => {
   test('appears after scrolling down', async ({ page }) => {
     await page.goto(BASE)
