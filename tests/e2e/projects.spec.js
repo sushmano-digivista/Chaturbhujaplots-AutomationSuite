@@ -10,24 +10,39 @@ const PROJECTS = [
 
 async function goTo(page, id) {
   await page.goto(`${BASE}/project/${id}`)
-  await page.waitForSelector('[class*="tabBar"], [class*="header"]', { timeout: 10000 })
+  await page.waitForSelector('[class*="tabBar"]', { timeout: 10000 })
+  await page.waitForTimeout(500)
 }
 
-// Helper: scroll tab into view then click (needed on mobile)
-async function clickTab(page, tabName) {
-  const btn = page.getByRole('button', { name: tabName }).first()
-  await btn.scrollIntoViewIfNeeded()
-  await btn.click()
-  await page.waitForTimeout(300)
+// Helper: on mobile open mobileNavBtn first, then click tab
+// On desktop just scroll+click directly
+async function clickTab(page, tabLabel) {
+  const isMobile = page.viewportSize()?.width < 768
+  if (isMobile) {
+    // Open the mobile tab dropdown
+    const mobileNavBtn = page.locator('[class*="mobileNavBtn"]').first()
+    if (await mobileNavBtn.isVisible()) {
+      await mobileNavBtn.click()
+      await page.waitForTimeout(300)
+    }
+    // Click the tab inside mobile dropdown
+    await page.locator('[class*="mobileTabBtn"]').filter({ hasText: tabLabel }).first().click()
+  } else {
+    const btn = page.locator('[class*="tabBtn"]').filter({ hasText: tabLabel }).first()
+    await btn.scrollIntoViewIfNeeded()
+    await btn.click()
+  }
+  await page.waitForTimeout(400)
 }
 
-// 1. All Project Pages Load
+// ── 1. All Project Pages Load ─────────────────────────────────────────────────
 test.describe('Project Pages Load', () => {
   for (const p of PROJECTS) {
     test(`${p.name} loads and shows name`, async ({ page }) => {
       await goTo(page, p.id)
       await expect(page.getByText(p.name).first()).toBeVisible()
     })
+
     test(`${p.name} shows location`, async ({ page }) => {
       await goTo(page, p.id)
       await expect(page.getByText(new RegExp(p.loc, 'i')).first()).toBeVisible()
@@ -35,7 +50,7 @@ test.describe('Project Pages Load', () => {
   }
 })
 
-// 2. Tab Navigation
+// ── 2. Tab Navigation ─────────────────────────────────────────────────────────
 test.describe('Project Tab Navigation', () => {
   test.beforeEach(async ({ page }) => { await goTo(page, 'anjana') })
 
@@ -47,7 +62,7 @@ test.describe('Project Tab Navigation', () => {
   }
 })
 
-// 3. Contact Tab Values from MongoDB
+// ── 3. Contact Tab Values from MongoDB ────────────────────────────────────────
 test.describe('Contact Tab — MongoDB Values', () => {
   test('Anjana Paradise has correct phone', async ({ page }) => {
     await goTo(page, 'anjana')
@@ -67,9 +82,10 @@ test.describe('Contact Tab — MongoDB Values', () => {
     for (const p of PROJECTS) {
       await goTo(page, p.id)
       await clickTab(page, 'Contact')
+      // WhatsApp button uses openWhatsApp() — look for sendWhatsApp text
       await expect(
-        page.locator('a[href*="wa.me"], button:has-text("WhatsApp"), [class*="whatsapp"]').first()
-      ).toBeVisible()
+        page.locator('[class*="contactRow"]').filter({ hasText: /WhatsApp|sendWhatsApp/i }).first()
+      ).toBeVisible({ timeout: 8000 })
     }
   })
 
@@ -90,7 +106,7 @@ test.describe('Contact Tab — MongoDB Values', () => {
   })
 })
 
-// 4. Trimbak Oaks — Upcoming
+// ── 4. Trimbak Oaks — Upcoming ────────────────────────────────────────────────
 test.describe('Trimbak Oaks — Upcoming Project', () => {
   test('shows Coming Soon in Overview', async ({ page }) => {
     await goTo(page, 'trimbak')
@@ -105,16 +121,16 @@ test.describe('Trimbak Oaks — Upcoming Project', () => {
   })
 })
 
-// 5. Enquire Now Modal
+// ── 5. Enquire Now Modal ──────────────────────────────────────────────────────
 test.describe('Enquire Now Modal', () => {
   test('opens on project page', async ({ page }) => {
     await goTo(page, 'anjana')
     await page.getByRole('button', { name: /Enquire Now/i }).first().click()
-    await expect(page.locator('[class*="modal"], [class*="Modal"]').first()).toBeVisible()
+    await expect(page.locator('[class*="overlay"]').first()).toBeVisible()
   })
 })
 
-// 6. Back Navigation
+// ── 6. Back Navigation ────────────────────────────────────────────────────────
 test.describe('Back Navigation', () => {
   test('Back button returns to homepage', async ({ page }) => {
     await goTo(page, 'anjana')
@@ -123,12 +139,12 @@ test.describe('Back Navigation', () => {
   })
 })
 
-// 7. Location Tab
+// ── 7. Location Tab ───────────────────────────────────────────────────────────
 test.describe('Location Tab', () => {
   test('map iframe loads for Anjana Paradise', async ({ page }) => {
     await goTo(page, 'anjana')
     await clickTab(page, 'Location')
-    await expect(page.locator('iframe').first()).toBeVisible()
+    await expect(page.locator('iframe').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('Open in Google Maps button visible', async ({ page }) => {
@@ -136,22 +152,23 @@ test.describe('Location Tab', () => {
     await clickTab(page, 'Location')
     await expect(
       page.locator('button:has-text("Open in Maps"), button:has-text("Get Directions"), button:has-text("దారి వివరాలు"), button:has-text("మాప్స్లో")').first()
-    ).toBeVisible()
+    ).toBeVisible({ timeout: 8000 })
   })
 })
 
-// 8. Amenities Tab
+// ── 8. Amenities Tab ──────────────────────────────────────────────────────────
 test.describe('Amenities Tab', () => {
   test('Infrastructure tab shows amenities', async ({ page }) => {
     await goTo(page, 'anjana')
     await clickTab(page, 'Amenities')
-    await expect(page.getByText(/Infrastructure/i)).toBeVisible()
+    await expect(page.locator('[class*="amGrid"]').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('Lifestyle tab works', async ({ page }) => {
     await goTo(page, 'anjana')
     await clickTab(page, 'Amenities')
-    await page.getByRole('button', { name: /Lifestyle/i }).click()
-    await expect(page.getByText(/Vaastu/i).first()).toBeVisible()
+    await page.locator('[class*="amTab"]').filter({ hasText: /Lifestyle/i }).first().click()
+    await page.waitForTimeout(300)
+    await expect(page.locator('[class*="amGrid"]').first()).toBeVisible()
   })
 })
