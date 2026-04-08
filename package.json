@@ -1,0 +1,19 @@
+{
+  "name": "chaturbhujaplots-automation-suite",
+  "version": "1.0.0",
+  "description": "E2E Automation Test Suite for Chaturbhuja Properties & Infra",
+  "scripts": {
+    "test":        "playwright test",
+    "test:en":     "playwright test --grep '2\\.'",
+    "test:te":     "playwright test --grep '3\\.'",
+    "test:project":"playwright test --grep '4\\.'",
+    "test:modal":  "playwright test --grep '6\\.'",
+    "test:mobile": "playwright test --grep '9\\.'",
+    "test:headed": "playwright test --headed",
+    "test:report": "playwright show-report",
+    "i18n":        "node tests/unit/i18n.telugu.test.cjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0"
+  }
+}
