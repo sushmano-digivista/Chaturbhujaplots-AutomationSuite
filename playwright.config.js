@@ -1,10 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
 
-/**
- * Chaturbhuja Properties & Infra — Playwright Config
- * Set TARGET_URL env var to test against production:
- *   TARGET_URL=https://www.chaturbhujaplots.in npx playwright test
- */
 export default defineConfig({
   testDir:  './e2e',
   timeout:  30000,
@@ -20,22 +15,10 @@ export default defineConfig({
   },
 
   projects: [
-    {
-      name: 'Desktop Chrome',
-      use:  { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'Desktop Chrome Slow',
-      use:  { ...devices['Desktop Chrome'], launchOptions: { slowMo: 100 } },
-    },
-    {
-      name: 'Mobile Chrome',
-      use:  { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'Mobile Safari',
-      use:  { ...devices['iPhone 14'] },
-    },
+    { name: 'Desktop Chrome',      use: { ...devices['Desktop Chrome'] } },
+    { name: 'Desktop Chrome Slow', use: { ...devices['Desktop Chrome'], launchOptions: { slowMo: 100 } } },
+    { name: 'Mobile Chrome',       use: { ...devices['Pixel 5'] } },
+    { name: 'Mobile Safari',       use: { ...devices['iPhone 14'] } },
   ],
 
   reporter: [

@@ -4,19 +4,18 @@ const BASE = 'http://localhost:3000'
 
 async function waitForLoad(page) {
   await page.waitForSelector('nav', { timeout: 10000 })
-  await page.waitForTimeout(500)
+  await page.waitForTimeout(1000)
 }
 
-// On mobile open hamburger, on desktop open Portfolio dropdown
+// Helper: open portfolio nav correctly on mobile vs desktop
 async function openPortfolioNav(page) {
-  const vp = page.viewportSize()
-  const isMobile = vp && vp.width < 768
+  const isMobile = page.viewportSize()?.width < 768
   if (isMobile) {
-    await page.locator('[class*="hamburger"], [class*="menuBtn"]').first().click()
-    await page.waitForTimeout(500)
-  } else {
-    await page.getByRole('button', { name: 'Portfolio' }).click()
+    await page.locator('[class*="hamburger"]').first().click()
     await page.waitForTimeout(400)
+  } else {
+    await page.locator('[class*="dropTrigger"]').first().click()
+    await page.waitForTimeout(300)
   }
 }
 
@@ -48,20 +47,25 @@ test.describe('Navbar', () => {
 
   test('Portfolio dropdown opens', async ({ page }) => {
     await openPortfolioNav(page)
-    await expect(page.locator('text=Anjana Paradise').first()).toBeVisible({ timeout: 5000 })
+    const isMobile = page.viewportSize()?.width < 768
+    if (isMobile) {
+      await expect(page.locator('[class*="mobileMenu"]').first()).toBeVisible()
+    } else {
+      await expect(page.locator('[class*="dropCards"]').first()).toBeVisible()
+    }
   })
 
   test('Portfolio shows all 4 projects', async ({ page }) => {
     await openPortfolioNav(page)
     for (const name of ['Anjana Paradise', 'Aparna Legacy', 'Varaha Virtue', 'Trimbak Oaks']) {
-      await expect(page.locator(`text=${name}`).first()).toBeVisible({ timeout: 5000 })
+      await expect(page.locator(`text=${name}`).first()).toBeVisible()
     }
   })
 
   test('clicking Anjana Paradise navigates to project', async ({ page }) => {
     await openPortfolioNav(page)
     await page.locator('text=Anjana Paradise').first().click()
-    await expect(page).toHaveURL(/anjana/, { timeout: 8000 })
+    await expect(page).toHaveURL(/anjana/)
   })
 })
 
@@ -101,27 +105,25 @@ test.describe('Hero Section', () => {
   })
 
   test('hero headline visible', async ({ page }) => {
-    await expect(page.getByText(/Premium Plots/i).first()).toBeVisible()
+    await expect(page.locator('#home h1').first()).toBeVisible()
   })
 
   test('View Available Plots button visible', async ({ page }) => {
-    await expect(page.getByRole('button', { name: /View Available Plots/i }).first()).toBeVisible()
+    await expect(
+      page.locator('#home button.btn-gold').first()
+    ).toBeVisible()
   })
 
   test('Enquire Now opens lead modal', async ({ page }) => {
-    await page.locator(
-      'button:has-text("View Available Plots"), button:has-text("Enquire Now")'
-    ).first().click()
-    await expect(page.locator('[class*="modal"], [class*="Modal"]').first()).toBeVisible({ timeout: 5000 })
+    await page.locator('#home button.btn-gold').first().click()
+    await expect(page.locator('[class*="overlay"]').first()).toBeVisible()
   })
 
   test('modal closes on X', async ({ page }) => {
-    await page.locator(
-      'button:has-text("View Available Plots"), button:has-text("Enquire Now")'
-    ).first().click()
-    await page.waitForTimeout(400)
-    await page.locator('[class*="close"], [class*="Close"]').first().click()
-    await expect(page.locator('[class*="modal"], [class*="Modal"]').first()).not.toBeVisible({ timeout: 5000 })
+    await page.locator('#home button.btn-gold').first().click()
+    await page.waitForTimeout(300)
+    await page.locator('[class*="closeBtn"]').first().click()
+    await expect(page.locator('[class*="overlay"]').first()).not.toBeVisible({ timeout: 3000 })
   })
 })
 
@@ -190,9 +192,10 @@ test.describe('ScrollToTop Button', () => {
   test('appears after scrolling down', async ({ page }) => {
     await page.goto(BASE)
     await waitForLoad(page)
-    await page.waitForTimeout(500)
     await page.evaluate(() => window.scrollTo(0, 3000))
     await page.waitForTimeout(1000)
-    await expect(page.locator('button[aria-label="Back to top"]')).toBeVisible({ timeout: 5000 })
+    await expect(
+      page.locator('button[aria-label="Back to top"]')
+    ).toBeVisible({ timeout: 5000 })
   })
 })

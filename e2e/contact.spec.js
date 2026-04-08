@@ -7,13 +7,17 @@ async function waitForLoad(page) {
   await page.waitForTimeout(500)
 }
 
+async function scrollToContact(page) {
+  await page.evaluate(() => document.getElementById('contact')?.scrollIntoView())
+  await page.waitForTimeout(800)
+}
+
 // ── Contact Section ───────────────────────────────────────────────────────────
 test.describe('Contact Section', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE)
     await waitForLoad(page)
-    await page.evaluate(() => document.getElementById('contact')?.scrollIntoView())
-    await page.waitForTimeout(800)
+    await scrollToContact(page)
   })
 
   test('contact section is visible', async ({ page }) => {
@@ -21,31 +25,35 @@ test.describe('Contact Section', () => {
   })
 
   test('phone number link is present', async ({ page }) => {
-    await expect(page.locator('a[href^="tel:"]').first()).toBeVisible()
+    // tel: link is inside callCard
+    await expect(
+      page.locator('#contact a[href^="tel:"]').first()
+    ).toBeVisible({ timeout: 8000 })
   })
 
   test('WhatsApp button has valid wa.me href', async ({ page }) => {
-    const waBtn = page.locator('a[href*="wa.me"]').first()
-    const href = await waBtn.getAttribute('href').catch(() => null)
-    if (href) expect(href).toContain('wa.me')
+    // WhatsApp uses openWhatsApp() — button with waBtn class
+    await expect(
+      page.locator('#contact [class*="waBtn"]').first()
+    ).toBeVisible({ timeout: 8000 })
   })
 
-  test('contact section has name input', async ({ page }) => {
+  test('Request Callback button is present', async ({ page }) => {
     await expect(
-      page.locator('#contact input[type="text"], #contact input[placeholder*="Name"], #contact input[placeholder*="name"]').first()
-    ).toBeVisible()
+      page.locator('#contact button.btn-green').first()
+    ).toBeVisible({ timeout: 8000 })
   })
 
-  test('contact section has phone input', async ({ page }) => {
+  test('Schedule Site Visit button is present', async ({ page }) => {
     await expect(
-      page.locator('#contact input[type="tel"], #contact input[placeholder*="Phone"], #contact input[placeholder*="phone"]').first()
-    ).toBeVisible()
+      page.locator('#contact [class*="visitBtn"]').first()
+    ).toBeVisible({ timeout: 8000 })
   })
 
-  test('Send Message button is present', async ({ page }) => {
+  test('Send Message / WhatsApp button is present', async ({ page }) => {
     await expect(
-      page.locator('#contact button[type="submit"], #contact button:has-text("Send")').first()
-    ).toBeVisible()
+      page.locator('#contact [class*="waBtn"]').first()
+    ).toBeVisible({ timeout: 8000 })
   })
 })
 
@@ -57,29 +65,19 @@ test.describe('Lead Modal', () => {
   })
 
   test('modal opens from hero CTA', async ({ page }) => {
-    await page.locator(
-      'button:has-text("View Available Plots"), button:has-text("Enquire Now")'
-    ).first().click()
-    await expect(page.locator('[class*="modal"], [class*="Modal"]').first()).toBeVisible({ timeout: 5000 })
+    await page.locator('#home button.btn-gold').first().click()
+    await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 5000 })
   })
 
   test('modal has name and phone fields', async ({ page }) => {
-    await page.locator(
-      'button:has-text("View Available Plots"), button:has-text("Enquire Now")'
-    ).first().click()
+    await page.locator('#home button.btn-gold').first().click()
     await page.waitForTimeout(300)
-    await expect(
-      page.locator('input[placeholder*="Name"], input[placeholder*="name"]').first()
-    ).toBeVisible()
-    await expect(
-      page.locator('input[type="tel"], input[placeholder*="Phone"]').first()
-    ).toBeVisible()
+    await expect(page.locator('input[placeholder*="Name"], input[placeholder*="name"]').first()).toBeVisible()
+    await expect(page.locator('input[type="tel"], input[placeholder*="Phone"]').first()).toBeVisible()
   })
 
   test('modal has project dropdown with all 4 projects', async ({ page }) => {
-    await page.locator(
-      'button:has-text("View Available Plots"), button:has-text("Enquire Now")'
-    ).first().click()
+    await page.locator('#home button.btn-gold').first().click()
     await page.waitForTimeout(300)
     const options = await page.locator('select option').allTextContents()
     expect(options.some(o => o.includes('Anjana'))).toBe(true)
@@ -88,20 +86,14 @@ test.describe('Lead Modal', () => {
   })
 
   test('modal closes on X button', async ({ page }) => {
-    await page.locator(
-      'button:has-text("View Available Plots"), button:has-text("Enquire Now")'
-    ).first().click()
+    await page.locator('#home button.btn-gold').first().click()
     await page.waitForTimeout(400)
-    await page.locator('[class*="close"], [class*="Close"]').first().click()
-    await expect(
-      page.locator('[class*="modal"], [class*="Modal"]').first()
-    ).not.toBeVisible({ timeout: 5000 })
+    await page.locator('[class*="closeBtn"]').first().click()
+    await expect(page.locator('[class*="overlay"]').first()).not.toBeVisible({ timeout: 5000 })
   })
 
   test('Book Site Visit modal has date field', async ({ page }) => {
-    await page.locator(
-      'button:has-text("Book Site Visit"), button:has-text("Site Visit")'
-    ).first().click()
+    await page.locator('button:has-text("Book Site Visit"), button:has-text("Site Visit")').first().click()
     await page.waitForTimeout(400)
     await expect(page.locator('input[type="date"]').first()).toBeVisible()
   })

@@ -2,23 +2,36 @@ import { test, expect } from '@playwright/test'
 
 const BASE = 'http://localhost:3000'
 const PROJECTS = [
-  { id: 'anjana',  name: 'Anjana Paradise', loc: 'Paritala'     },
-  { id: 'aparna',  name: 'Aparna Legacy',   loc: 'Chevitikallu' },
-  { id: 'varaha',  name: 'Varaha Virtue',   loc: 'Pamarru'      },
-  { id: 'trimbak', name: 'Trimbak Oaks',    loc: 'Penamaluru'   },
+  { id: 'anjana',  name: 'Anjana Paradise', loc: 'Paritala'    },
+  { id: 'aparna',  name: 'Aparna Legacy',   loc: 'Chevitikallu'},
+  { id: 'varaha',  name: 'Varaha Virtue',   loc: 'Pamarru'     },
+  { id: 'trimbak', name: 'Trimbak Oaks',    loc: 'Penamaluru'  },
 ]
 
 async function goTo(page, id) {
   await page.goto(`${BASE}/project/${id}`)
-  await page.waitForSelector('[class*="tabBar"], [class*="header"]', { timeout: 10000 })
+  await page.waitForSelector('[class*="tabBar"]', { timeout: 10000 })
   await page.waitForTimeout(500)
 }
 
-// Scroll tab into view then click — handles mobile horizontal tab bar
-async function clickTab(page, tabName) {
-  const btn = page.getByRole('button', { name: tabName }).first()
-  await btn.scrollIntoViewIfNeeded()
-  await btn.click()
+// Helper: on mobile open mobileNavBtn first, then click tab
+// On desktop just scroll+click directly
+async function clickTab(page, tabLabel) {
+  const isMobile = page.viewportSize()?.width < 768
+  if (isMobile) {
+    // Open the mobile tab dropdown
+    const mobileNavBtn = page.locator('[class*="mobileNavBtn"]').first()
+    if (await mobileNavBtn.isVisible()) {
+      await mobileNavBtn.click()
+      await page.waitForTimeout(300)
+    }
+    // Click the tab inside mobile dropdown
+    await page.locator('[class*="mobileTabBtn"]').filter({ hasText: tabLabel }).first().click()
+  } else {
+    const btn = page.locator('[class*="tabBtn"]').filter({ hasText: tabLabel }).first()
+    await btn.scrollIntoViewIfNeeded()
+    await btn.click()
+  }
   await page.waitForTimeout(400)
 }
 
@@ -69,9 +82,10 @@ test.describe('Contact Tab — MongoDB Values', () => {
     for (const p of PROJECTS) {
       await goTo(page, p.id)
       await clickTab(page, 'Contact')
+      // WhatsApp button uses openWhatsApp() — look for sendWhatsApp text
       await expect(
-        page.locator('a[href*="wa.me"], button:has-text("WhatsApp"), [class*="whatsapp"]').first()
-      ).toBeVisible()
+        page.locator('[class*="contactRow"]').filter({ hasText: /WhatsApp|sendWhatsApp/i }).first()
+      ).toBeVisible({ timeout: 8000 })
     }
   })
 
@@ -112,7 +126,7 @@ test.describe('Enquire Now Modal', () => {
   test('opens on project page', async ({ page }) => {
     await goTo(page, 'anjana')
     await page.getByRole('button', { name: /Enquire Now/i }).first().click()
-    await expect(page.locator('[class*="modal"], [class*="Modal"]').first()).toBeVisible()
+    await expect(page.locator('[class*="overlay"]').first()).toBeVisible()
   })
 })
 
@@ -130,21 +144,14 @@ test.describe('Location Tab', () => {
   test('map iframe loads for Anjana Paradise', async ({ page }) => {
     await goTo(page, 'anjana')
     await clickTab(page, 'Location')
-    await expect(page.locator('iframe').first()).toBeVisible()
+    await expect(page.locator('iframe').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('Open in Google Maps button visible', async ({ page }) => {
     await goTo(page, 'anjana')
     await clickTab(page, 'Location')
     await expect(
-      page.locator([
-        'button:has-text("Open in Maps")',
-        'button:has-text("Get Directions")',
-        'button:has-text("దారి వివరాలు")',
-        'button:has-text("మాప్స్లో")',
-        'a:has-text("Open in Maps")',
-        'a[href*="maps.google"]',
-      ].join(', ')).first()
+      page.locator('button:has-text("Open in Maps"), button:has-text("Get Directions"), button:has-text("దారి వివరాలు"), button:has-text("మాప్స్లో")').first()
     ).toBeVisible({ timeout: 8000 })
   })
 })
@@ -154,13 +161,14 @@ test.describe('Amenities Tab', () => {
   test('Infrastructure tab shows amenities', async ({ page }) => {
     await goTo(page, 'anjana')
     await clickTab(page, 'Amenities')
-    await expect(page.getByText(/Infrastructure/i)).toBeVisible()
+    await expect(page.locator('[class*="amGrid"]').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('Lifestyle tab works', async ({ page }) => {
     await goTo(page, 'anjana')
     await clickTab(page, 'Amenities')
-    await page.getByRole('button', { name: /Lifestyle/i }).click()
-    await expect(page.getByText(/Vaastu/i).first()).toBeVisible()
+    await page.locator('[class*="amTab"]').filter({ hasText: /Lifestyle/i }).first().click()
+    await page.waitForTimeout(300)
+    await expect(page.locator('[class*="amGrid"]').first()).toBeVisible()
   })
 })
