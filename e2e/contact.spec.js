@@ -13,12 +13,15 @@ async function scrollToContact(page) {
 }
 
 async function openHeroModal(page) {
-  // btn-gold scrolls to plots — use Enquire button from sticky bar (most reliable)
-  await page.locator('[class*="sbMain"]').first().click()
+  // Use navbar ENQUIRE NOW button — visible on both desktop and mobile
+  // enquireBtn class on desktop, mobileEnquire on mobile
+  const enquireBtn = page.locator('[class*="enquireBtn"], [class*="mobileEnquire"]').first()
+  await expect(enquireBtn).toBeVisible({ timeout: 5000 })
+  await enquireBtn.click()
   await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 8000 })
-  // Wait for Framer Motion spring animation to complete + form to render
+  // Wait for Framer Motion animation to complete and form to render
   await page.waitForSelector('.form-input', { timeout: 10000 })
-  await page.waitForTimeout(500)
+  await page.waitForTimeout(300)
 }
 
 // ── Contact Section ───────────────────────────────────────────────────────────
