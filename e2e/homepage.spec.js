@@ -121,12 +121,13 @@ test.describe('Hero Section', () => {
   })
 
   test('Enquire Now opens lead modal', async ({ page }) => {
-    await page.locator('#home .btn-gold').first().click()
+    // btn-gold scrolls to plots — btn-outline (Book Site Visit) opens the modal
+    await page.locator('#home button.btn-outline').first().click()
     await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('modal closes on X', async ({ page }) => {
-    await page.locator('#home .btn-gold').first().click()
+    await page.locator('#home button.btn-outline').first().click()
     await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 8000 })
     await page.waitForTimeout(800)
     // closeBtn has aria-label="Close" — modal uses createPortal so at body level
