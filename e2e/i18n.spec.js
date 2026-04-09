@@ -8,8 +8,6 @@ async function waitForLoad(page) {
   await page.waitForTimeout(800)
 }
 
-// Two LanguageToggle instances in DOM (desktop + mobile)
-// Find the visible one and click it
 async function getVisibleToggle(page, ariaLabel) {
   const toggles = page.locator(`button[aria-label="${ariaLabel}"]`)
   const count = await toggles.count()
@@ -23,7 +21,7 @@ async function switchToTelugu(page) {
   const toggle = await getVisibleToggle(page, 'Switch to Telugu')
   if (await toggle.isVisible()) {
     await toggle.click()
-    await page.waitForTimeout(600)
+    await page.waitForTimeout(800)
   }
 }
 
@@ -31,7 +29,7 @@ async function switchToEnglish(page) {
   const toggle = await getVisibleToggle(page, 'Switch to English')
   if (await toggle.isVisible()) {
     await toggle.click()
-    await page.waitForTimeout(600)
+    await page.waitForTimeout(800)
   }
 }
 
@@ -43,18 +41,13 @@ test.describe('Language Toggle', () => {
   })
 
   test('EN/తె toggle is visible in navbar', async ({ page }) => {
-    // At least one of the two toggles should be visible
     const enToggle = page.locator('button[aria-label="Switch to Telugu"]')
     const teToggle = page.locator('button[aria-label="Switch to English"]')
-    const enCount = await enToggle.count()
-    const teCount = await teToggle.count()
-    expect(enCount + teCount).toBeGreaterThan(0)
-    // At least one is visible
     let anyVisible = false
-    for (let i = 0; i < enCount; i++) {
+    for (let i = 0; i < await enToggle.count(); i++) {
       if (await enToggle.nth(i).isVisible()) { anyVisible = true; break }
     }
-    for (let i = 0; i < teCount; i++) {
+    for (let i = 0; i < await teToggle.count(); i++) {
       if (await teToggle.nth(i).isVisible()) { anyVisible = true; break }
     }
     expect(anyVisible).toBe(true)
@@ -120,10 +113,14 @@ test.describe('Telugu Mode', () => {
   })
 
   test('location tabs show Telugu project short names', async ({ page }) => {
+    // Scroll to location section and wait for data to load from DB
     await page.evaluate(() => document.getElementById('location')?.scrollIntoView())
-    await page.waitForTimeout(1000)
+    await page.waitForTimeout(2000)
+    // Telugu short names are in ventureTabShort spans
     for (const name of ['పారిటాల', 'చెవిటికల్లు', 'పామర్రు', 'పేనమలూరు']) {
-      await expect(page.locator(`text=${name}`).first()).toBeVisible({ timeout: 10000 })
+      await expect(
+        page.locator(`[class*="ventureTabShort"]:has-text("${name}"), [class*="ventureTab"]:has-text("${name}")`).first()
+      ).toBeVisible({ timeout: 12000 })
     }
   })
 

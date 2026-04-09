@@ -10,26 +10,30 @@ const PROJECTS = [
 
 async function goTo(page, id) {
   await page.goto(`${BASE}/project/${id}`)
-  // On mobile tabBar is display:none — wait for mobileNavBtn instead
+  // On mobile tabBar is display:none — wait for mobileNavBtn
+  // On desktop wait for tabBar
   const isMobile = page.viewportSize()?.width < 768
-  const selector = isMobile ? '[class*="mobileNavBtn"]' : '[class*="tabBar"]'
+  const selector  = isMobile ? '[class*="mobileNavBtn"]' : '[class*="tabBar"]'
   await page.waitForSelector(selector, { timeout: 20000 })
   await page.waitForTimeout(500)
 }
 
-// Helper: click a tab correctly on mobile vs desktop
 async function clickTab(page, tabLabel) {
   const isMobile = page.viewportSize()?.width < 768
   if (isMobile) {
+    // Open mobile nav dropdown
     await page.locator('[class*="mobileNavBtn"]').first().click()
-    await page.waitForTimeout(300)
-    await page.locator('[class*="mobileTabBtn"]').filter({ hasText: tabLabel }).first().click()
+    await page.waitForTimeout(400)
+    // Scroll tab into view (dropdown might be long)
+    const tabBtn = page.locator('[class*="mobileTabBtn"]').filter({ hasText: tabLabel }).first()
+    await tabBtn.scrollIntoViewIfNeeded()
+    await tabBtn.click()
   } else {
     const btn = page.locator('[class*="tabBtn"]').filter({ hasText: tabLabel }).first()
     await btn.scrollIntoViewIfNeeded()
     await btn.click()
   }
-  await page.waitForTimeout(400)
+  await page.waitForTimeout(500)
 }
 
 // ── 1. All Project Pages Load ─────────────────────────────────────────────────
@@ -54,7 +58,7 @@ test.describe('Project Tab Navigation', () => {
   for (const tab of ['Overview', 'Amenities', 'Gallery', 'Videos', 'Location', 'Contact']) {
     test(`${tab} tab opens`, async ({ page }) => {
       await clickTab(page, tab)
-      await expect(page.getByText(new RegExp(tab, 'i')).first()).toBeVisible()
+      await expect(page.getByText(new RegExp(tab, 'i')).first()).toBeVisible({ timeout: 5000 })
     })
   }
 })

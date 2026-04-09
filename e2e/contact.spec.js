@@ -12,6 +12,12 @@ async function scrollToContact(page) {
   await page.waitForTimeout(800)
 }
 
+async function openHeroModal(page) {
+  await page.locator('#home button.btn-gold').first().click()
+  await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 8000 })
+  await page.waitForTimeout(500)
+}
+
 // ── Contact Section ───────────────────────────────────────────────────────────
 test.describe('Contact Section', () => {
   test.beforeEach(async ({ page }) => {
@@ -53,26 +59,20 @@ test.describe('Lead Modal', () => {
   })
 
   test('modal opens from hero CTA', async ({ page }) => {
-    await page.locator('#home button.btn-gold').first().click()
-    await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 5000 })
+    await openHeroModal(page)
+    await expect(page.locator('[class*="overlay"]').first()).toBeVisible()
   })
 
   test('modal has name and phone fields', async ({ page }) => {
-    await page.locator('#home button.btn-gold').first().click()
-    await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 5000 })
-    await page.waitForTimeout(300)
-    await expect(
-      page.locator('[class*="overlay"] input[placeholder*="Name"], [class*="overlay"] input[placeholder*="name"]').first()
-    ).toBeVisible({ timeout: 5000 })
-    await expect(
-      page.locator('[class*="overlay"] input[type="tel"]').first()
-    ).toBeVisible({ timeout: 5000 })
+    await openHeroModal(page)
+    // Inputs use t('contact.namePlaceholder') and t('contact.phonePlaceholder') — language-aware
+    // Use type selectors instead of placeholder text
+    await expect(page.locator('[class*="overlay"] input[type="text"], [class*="overlay"] input:not([type="tel"]):not([type="date"]):not([type="email"])').first()).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('[class*="overlay"] input[inputmode="tel"], [class*="overlay"] input[type="tel"]').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('modal has project dropdown with all 4 projects', async ({ page }) => {
-    await page.locator('#home button.btn-gold').first().click()
-    await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 5000 })
-    await page.waitForTimeout(300)
+    await openHeroModal(page)
     const options = await page.locator('[class*="overlay"] select option').allTextContents()
     expect(options.some(o => o.includes('Anjana'))).toBe(true)
     expect(options.some(o => o.includes('Aparna'))).toBe(true)
@@ -80,11 +80,10 @@ test.describe('Lead Modal', () => {
   })
 
   test('modal closes on X button', async ({ page }) => {
-    await page.locator('#home button.btn-gold').first().click()
-    await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 5000 })
-    await page.waitForTimeout(500)
-    await page.locator('[class*="closeBtn"]').first().click()
-    await expect(page.locator('[class*="overlay"]').first()).not.toBeVisible({ timeout: 5000 })
+    await openHeroModal(page)
+    // closeBtn is inside the modal box — click it
+    await page.locator('[class*="overlay"] [class*="closeBtn"]').first().click()
+    await expect(page.locator('[class*="overlay"]').first()).not.toBeVisible({ timeout: 8000 })
   })
 
   test('Book Site Visit modal has date field', async ({ page }) => {

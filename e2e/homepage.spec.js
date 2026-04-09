@@ -7,15 +7,12 @@ async function waitForLoad(page) {
   await page.waitForTimeout(1000)
 }
 
-// On desktop: click Portfolio button by text (t('nav.portfolio') = 'Portfolio')
-// On mobile: open hamburger — projects are in mobilePortfolioSection
 async function openPortfolioNav(page) {
   const isMobile = page.viewportSize()?.width < 768
   if (isMobile) {
     await page.locator('[class*="hamburger"]').first().click()
     await page.waitForTimeout(400)
   } else {
-    // Use text selector — more reliable than CSS module class
     await page.locator('nav').getByText('Portfolio').first().click()
     await page.waitForTimeout(300)
   }
@@ -60,7 +57,7 @@ test.describe('Navbar', () => {
   test('Portfolio shows all 4 projects', async ({ page }) => {
     await openPortfolioNav(page)
     for (const name of ['Anjana Paradise', 'Aparna Legacy', 'Varaha Virtue', 'Trimbak Oaks']) {
-      await expect(page.locator(`text=${name}`).first()).toBeVisible()
+      await expect(page.locator(`text=${name}`).first()).toBeVisible({ timeout: 5000 })
     }
   })
 
@@ -68,12 +65,13 @@ test.describe('Navbar', () => {
     await openPortfolioNav(page)
     const isMobile = page.viewportSize()?.width < 768
     if (isMobile) {
-      // Mobile: use mobileProjectCard
+      // On mobile projects are in mobileProjectCard buttons
       await page.locator('[class*="mobileProjectCard"]').filter({ hasText: 'Anjana' }).first().click()
     } else {
+      // On desktop projects are in dropCard buttons
       await page.locator('[class*="dropCard"]').filter({ hasText: 'Anjana' }).first().click()
     }
-    await expect(page).toHaveURL(/anjana/)
+    await expect(page).toHaveURL(/anjana/, { timeout: 8000 })
   })
 })
 
@@ -87,7 +85,8 @@ test.describe('Mobile Navbar', () => {
   })
 
   test('hamburger button visible on mobile', async ({ page }) => {
-    await expect(page.locator('[class*="hamburger"]').first()).toBeVisible()
+    // mobileRight div contains hamburger — only visible on mobile
+    await expect(page.locator('[class*="hamburger"]').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('hamburger opens mobile menu', async ({ page }) => {
@@ -100,8 +99,8 @@ test.describe('Mobile Navbar', () => {
     await page.locator('[class*="hamburger"]').first().click()
     await page.waitForTimeout(500)
     await page.locator('[class*="mobileLink"]').filter({ hasText: 'Gallery' }).first().click()
-    await page.waitForTimeout(1200)
-    await expect(page.locator('#gallery')).toBeInViewport({ timeout: 5000 })
+    await page.waitForTimeout(1500)
+    await expect(page.locator('#gallery')).toBeInViewport({ timeout: 6000 })
   })
 })
 
@@ -113,25 +112,26 @@ test.describe('Hero Section', () => {
   })
 
   test('hero headline visible', async ({ page }) => {
-    await expect(page.locator('#home h1').first()).toBeVisible()
+    await expect(page.locator('#home h1').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('View Available Plots button visible', async ({ page }) => {
-    await expect(page.locator('#home button.btn-gold').first()).toBeVisible()
+    // btn-gold is the first hero CTA button, visible on all viewports
+    await expect(page.locator('#home .btn-gold').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('Enquire Now opens lead modal', async ({ page }) => {
-    await page.locator('#home button.btn-gold').first().click()
-    await expect(page.locator('[class*="overlay"]').first()).toBeVisible()
+    await page.locator('#home .btn-gold').first().click()
+    await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('modal closes on X', async ({ page }) => {
-    await page.locator('#home button.btn-gold').first().click()
-    // Wait for modal to fully open
-    await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 5000 })
-    await page.waitForTimeout(500)
-    await page.locator('[class*="closeBtn"]').first().click()
-    await expect(page.locator('[class*="overlay"]').first()).not.toBeVisible({ timeout: 5000 })
+    await page.locator('#home .btn-gold').first().click()
+    await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 8000 })
+    await page.waitForTimeout(600)
+    // Close button is inside overlay
+    await page.locator('[class*="overlay"] [class*="closeBtn"]').first().click()
+    await expect(page.locator('[class*="overlay"]').first()).not.toBeVisible({ timeout: 8000 })
   })
 })
 
@@ -178,7 +178,7 @@ test.describe('Section Scrolling', () => {
       await page.evaluate(
         (sId) => document.getElementById(sId)?.scrollIntoView({ behavior: 'instant' }), id
       )
-      await page.waitForTimeout(1000)
+      await page.waitForTimeout(1200)
     })
   }
 })

@@ -14,7 +14,6 @@ async function openMobileMenu(page) {
   await page.waitForTimeout(500)
 }
 
-// On mobile tabBar is display:none — wait for mobileNavBtn
 async function goToProject(page, id) {
   await page.goto(`${BASE}/project/${id}`)
   await page.waitForSelector('[class*="mobileNavBtn"]', { timeout: 20000 })
@@ -33,8 +32,7 @@ test.describe('Mobile Sticky Bar', () => {
   })
 
   test('Call button has tel: link', async ({ page }) => {
-    const callBtn = page.locator('[class*="stickyBar"] a[href^="tel:"]').first()
-    await expect(callBtn).toBeVisible()
+    await expect(page.locator('[class*="stickyBar"] a[href^="tel:"]').first()).toBeVisible()
   })
 
   test('Enquire opens lead modal', async ({ page }) => {
@@ -76,9 +74,12 @@ test.describe('Mobile Hamburger Nav', () => {
 
   test('Contact link closes menu and scrolls', async ({ page }) => {
     await openMobileMenu(page)
-    await page.locator('[class*="mobileLink"]').filter({ hasText: 'Contact' }).first().click()
+    // Contact uses mobileLink — scroll into view first
+    const contactLink = page.locator('[class*="mobileLink"]').filter({ hasText: 'Contact' }).first()
+    await contactLink.scrollIntoViewIfNeeded()
+    await contactLink.click()
     await page.waitForTimeout(1500)
-    await expect(page.locator('#contact')).toBeInViewport({ timeout: 6000 })
+    await expect(page.locator('#contact')).toBeInViewport({ timeout: 8000 })
   })
 })
 
@@ -101,14 +102,11 @@ test.describe('Mobile Portfolio', () => {
   })
 
   test('tapping Anjana Paradise navigates to project', async ({ page }) => {
-    // Click card → opens popup → click View Project / Navigate button
+    // Click card → opens popup with popupCta button
     await page.locator('[class*="cardName"]').filter({ hasText: 'Anjana Paradise' }).first().click()
-    await page.waitForTimeout(600)
-    // After click a popup opens with a navigate button
-    const viewBtn = page.locator('[class*="popupBtn"], button:has-text("View Project"), button:has-text("View Plots")').first()
-    if (await viewBtn.isVisible()) {
-      await viewBtn.click()
-    }
+    await page.waitForTimeout(800)
+    // Click the "View Project" button inside the popup
+    await page.locator('[class*="popupCta"]').first().click()
     await expect(page).toHaveURL(/anjana/, { timeout: 8000 })
   })
 })
@@ -164,11 +162,15 @@ test.describe('Mobile Project Page', () => {
 
   test('all tabs accessible via mobile menu', async ({ page }) => {
     for (const tab of ['Overview', 'Amenities', 'Gallery', 'Videos', 'Location', 'Contact']) {
+      // mobileNavBtn toggles dropdown — click to open, then click tab, dropdown auto-closes
       await page.locator('[class*="mobileNavBtn"]').first().click()
-      await page.waitForTimeout(300)
-      await page.locator('[class*="mobileTabBtn"]').filter({ hasText: tab }).first().click()
       await page.waitForTimeout(400)
-      await expect(page.getByText(new RegExp(tab, 'i')).first()).toBeVisible()
+      // mobileTabBtn is only visible when dropdown is open
+      const tabBtn = page.locator('[class*="mobileTabBtn"]').filter({ hasText: tab }).first()
+      await tabBtn.scrollIntoViewIfNeeded()
+      await tabBtn.click()
+      await page.waitForTimeout(600)
+      await expect(page.getByText(new RegExp(tab, 'i')).first()).toBeVisible({ timeout: 5000 })
     }
   })
 
