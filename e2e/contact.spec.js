@@ -13,9 +13,10 @@ async function scrollToContact(page) {
 }
 
 async function openHeroModal(page) {
-  await page.locator('#home button.btn-gold').first().click()
+  // btn-gold scrolls to plots — use btn-outline (Book Site Visit) which opens modal
+  await page.locator('#home button.btn-outline').first().click()
   await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 8000 })
-  await page.waitForTimeout(500)
+  await page.waitForTimeout(800)
 }
 
 // ── Contact Section ───────────────────────────────────────────────────────────
