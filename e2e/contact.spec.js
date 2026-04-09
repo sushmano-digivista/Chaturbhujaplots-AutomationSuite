@@ -88,10 +88,12 @@ test.describe('Lead Modal', () => {
   test('modal closes on X button', async ({ page }) => {
     await openHeroModal(page)
     await expect(page.locator('[class*="overlay"]').first()).toBeVisible()
-    // Click the overlay backdrop (top-left corner away from sheet) — triggers onClose
-    await page.locator('[class*="overlay"]').first().click({ position: { x: 10, y: 10 }, force: true })
-    await page.waitForTimeout(1500)
-    // Use not.toBeAttached — AnimatePresence removes from DOM after exit animation
+    // Use JS to directly click the close button — bypasses slowMo interference
+    await page.evaluate(() => {
+      const btn = document.querySelector('button[aria-label="Close"]')
+      if (btn) btn.click()
+    })
+    await page.waitForTimeout(2000)
     await expect(page.locator('[class*="overlay"]').first()).not.toBeAttached({ timeout: 10000 })
   })
 
