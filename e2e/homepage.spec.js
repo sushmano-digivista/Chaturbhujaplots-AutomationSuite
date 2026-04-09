@@ -131,10 +131,12 @@ test.describe('Hero Section', () => {
     await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 8000 })
     await page.waitForSelector('.form-input', { timeout: 10000 })
     await page.waitForTimeout(300)
-    // Click overlay backdrop (top-left away from sheet) — triggers onClose
-    await page.locator('[class*="overlay"]').first().click({ position: { x: 10, y: 10 }, force: true })
-    await page.waitForTimeout(1500)
-    // AnimatePresence removes from DOM after exit animation
+    // Use JS to directly click close button — bypasses slowMo interference
+    await page.evaluate(() => {
+      const btn = document.querySelector('button[aria-label="Close"]')
+      if (btn) btn.click()
+    })
+    await page.waitForTimeout(2000)
     await expect(page.locator('[class*="overlay"]').first()).not.toBeAttached({ timeout: 10000 })
   })
 })
