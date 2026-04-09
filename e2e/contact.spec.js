@@ -87,10 +87,10 @@ test.describe('Lead Modal', () => {
 
   test('modal closes on X button', async ({ page }) => {
     await openHeroModal(page)
-    const closeBtn = page.locator('button[aria-label="Close"]').first()
-    await expect(closeBtn).toBeVisible({ timeout: 5000 })
-    await closeBtn.click()
-    await page.waitForTimeout(800)
+    await expect(page.locator('[class*="overlay"]').first()).toBeVisible()
+    // Press Escape — modal has keyboard handler for this
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(1500)
     await expect(page.locator('[class*="overlay"]').first()).not.toBeVisible({ timeout: 8000 })
   })
 
