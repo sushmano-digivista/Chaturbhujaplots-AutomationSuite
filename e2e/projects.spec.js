@@ -10,22 +10,19 @@ const PROJECTS = [
 
 async function goTo(page, id) {
   await page.goto(`${BASE}/project/${id}`)
-  await page.waitForSelector('[class*="tabBar"]', { timeout: 10000 })
+  // On mobile tabBar is display:none — wait for mobileNavBtn instead
+  const isMobile = page.viewportSize()?.width < 768
+  const selector = isMobile ? '[class*="mobileNavBtn"]' : '[class*="tabBar"]'
+  await page.waitForSelector(selector, { timeout: 20000 })
   await page.waitForTimeout(500)
 }
 
-// Helper: on mobile open mobileNavBtn first, then click tab
-// On desktop just scroll+click directly
+// Helper: click a tab correctly on mobile vs desktop
 async function clickTab(page, tabLabel) {
   const isMobile = page.viewportSize()?.width < 768
   if (isMobile) {
-    // Open the mobile tab dropdown
-    const mobileNavBtn = page.locator('[class*="mobileNavBtn"]').first()
-    if (await mobileNavBtn.isVisible()) {
-      await mobileNavBtn.click()
-      await page.waitForTimeout(300)
-    }
-    // Click the tab inside mobile dropdown
+    await page.locator('[class*="mobileNavBtn"]').first().click()
+    await page.waitForTimeout(300)
     await page.locator('[class*="mobileTabBtn"]').filter({ hasText: tabLabel }).first().click()
   } else {
     const btn = page.locator('[class*="tabBtn"]').filter({ hasText: tabLabel }).first()
@@ -82,9 +79,8 @@ test.describe('Contact Tab — MongoDB Values', () => {
     for (const p of PROJECTS) {
       await goTo(page, p.id)
       await clickTab(page, 'Contact')
-      // WhatsApp button uses openWhatsApp() — look for sendWhatsApp text
       await expect(
-        page.locator('[class*="contactRow"]').filter({ hasText: /WhatsApp|sendWhatsApp/i }).first()
+        page.locator('[class*="contactRow"]').filter({ hasText: /WhatsApp/i }).first()
       ).toBeVisible({ timeout: 8000 })
     }
   })

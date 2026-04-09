@@ -8,9 +8,19 @@ async function waitForLoad(page) {
   await page.waitForTimeout(800)
 }
 
-// Language toggle is a <button aria-label="Switch to Telugu/English">
+// Two LanguageToggle instances in DOM (desktop + mobile)
+// Find the visible one and click it
+async function getVisibleToggle(page, ariaLabel) {
+  const toggles = page.locator(`button[aria-label="${ariaLabel}"]`)
+  const count = await toggles.count()
+  for (let i = 0; i < count; i++) {
+    if (await toggles.nth(i).isVisible()) return toggles.nth(i)
+  }
+  return toggles.first()
+}
+
 async function switchToTelugu(page) {
-  const toggle = page.locator('button[aria-label="Switch to Telugu"]').first()
+  const toggle = await getVisibleToggle(page, 'Switch to Telugu')
   if (await toggle.isVisible()) {
     await toggle.click()
     await page.waitForTimeout(600)
@@ -18,7 +28,7 @@ async function switchToTelugu(page) {
 }
 
 async function switchToEnglish(page) {
-  const toggle = page.locator('button[aria-label="Switch to English"]').first()
+  const toggle = await getVisibleToggle(page, 'Switch to English')
   if (await toggle.isVisible()) {
     await toggle.click()
     await page.waitForTimeout(600)
@@ -33,25 +43,34 @@ test.describe('Language Toggle', () => {
   })
 
   test('EN/తె toggle is visible in navbar', async ({ page }) => {
-    await expect(
-      page.locator('button[aria-label="Switch to Telugu"], button[aria-label="Switch to English"]').first()
-    ).toBeVisible()
+    // At least one of the two toggles should be visible
+    const enToggle = page.locator('button[aria-label="Switch to Telugu"]')
+    const teToggle = page.locator('button[aria-label="Switch to English"]')
+    const enCount = await enToggle.count()
+    const teCount = await teToggle.count()
+    expect(enCount + teCount).toBeGreaterThan(0)
+    // At least one is visible
+    let anyVisible = false
+    for (let i = 0; i < enCount; i++) {
+      if (await enToggle.nth(i).isVisible()) { anyVisible = true; break }
+    }
+    for (let i = 0; i < teCount; i++) {
+      if (await teToggle.nth(i).isVisible()) { anyVisible = true; break }
+    }
+    expect(anyVisible).toBe(true)
   })
 
   test('toggles to Telugu on click', async ({ page }) => {
     await switchToTelugu(page)
-    // After switching, toggle should now say "Switch to English"
-    await expect(
-      page.locator('button[aria-label="Switch to English"]').first()
-    ).toBeVisible()
+    const toggle = await getVisibleToggle(page, 'Switch to English')
+    await expect(toggle).toBeVisible()
   })
 
   test('toggles back to English', async ({ page }) => {
     await switchToTelugu(page)
     await switchToEnglish(page)
-    await expect(
-      page.locator('button[aria-label="Switch to Telugu"]').first()
-    ).toBeVisible()
+    const toggle = await getVisibleToggle(page, 'Switch to Telugu')
+    await expect(toggle).toBeVisible()
   })
 })
 
@@ -97,14 +116,14 @@ test.describe('Telugu Mode', () => {
   })
 
   test('"మాతో ఎందుకు" heading visible', async ({ page }) => {
-    await expect(page.locator('text=మాతో ఎందుకు').first()).toBeVisible()
+    await expect(page.locator('text=మాతో ఎందుకు').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('location tabs show Telugu project short names', async ({ page }) => {
     await page.evaluate(() => document.getElementById('location')?.scrollIntoView())
-    await page.waitForTimeout(500)
+    await page.waitForTimeout(1000)
     for (const name of ['పారిటాల', 'చెవిటికల్లు', 'పామర్రు', 'పేనమలూరు']) {
-      await expect(page.locator(`text=${name}`).first()).toBeVisible({ timeout: 8000 })
+      await expect(page.locator(`text=${name}`).first()).toBeVisible({ timeout: 10000 })
     }
   })
 

@@ -25,35 +25,23 @@ test.describe('Contact Section', () => {
   })
 
   test('phone number link is present', async ({ page }) => {
-    // tel: link is inside callCard
-    await expect(
-      page.locator('#contact a[href^="tel:"]').first()
-    ).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('#contact a[href^="tel:"]').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('WhatsApp button has valid wa.me href', async ({ page }) => {
-    // WhatsApp uses openWhatsApp() — button with waBtn class
-    await expect(
-      page.locator('#contact [class*="waBtn"]').first()
-    ).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('#contact [class*="waBtn"]').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('Request Callback button is present', async ({ page }) => {
-    await expect(
-      page.locator('#contact button.btn-green').first()
-    ).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('#contact button.btn-green').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('Schedule Site Visit button is present', async ({ page }) => {
-    await expect(
-      page.locator('#contact [class*="visitBtn"]').first()
-    ).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('#contact [class*="visitBtn"]').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('Send Message / WhatsApp button is present', async ({ page }) => {
-    await expect(
-      page.locator('#contact [class*="waBtn"]').first()
-    ).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('#contact [class*="waBtn"]').first()).toBeVisible({ timeout: 8000 })
   })
 })
 
@@ -71,15 +59,21 @@ test.describe('Lead Modal', () => {
 
   test('modal has name and phone fields', async ({ page }) => {
     await page.locator('#home button.btn-gold').first().click()
+    await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 5000 })
     await page.waitForTimeout(300)
-    await expect(page.locator('input[placeholder*="Name"], input[placeholder*="name"]').first()).toBeVisible()
-    await expect(page.locator('input[type="tel"], input[placeholder*="Phone"]').first()).toBeVisible()
+    await expect(
+      page.locator('[class*="overlay"] input[placeholder*="Name"], [class*="overlay"] input[placeholder*="name"]').first()
+    ).toBeVisible({ timeout: 5000 })
+    await expect(
+      page.locator('[class*="overlay"] input[type="tel"]').first()
+    ).toBeVisible({ timeout: 5000 })
   })
 
   test('modal has project dropdown with all 4 projects', async ({ page }) => {
     await page.locator('#home button.btn-gold').first().click()
+    await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 5000 })
     await page.waitForTimeout(300)
-    const options = await page.locator('select option').allTextContents()
+    const options = await page.locator('[class*="overlay"] select option').allTextContents()
     expect(options.some(o => o.includes('Anjana'))).toBe(true)
     expect(options.some(o => o.includes('Aparna'))).toBe(true)
     expect(options.some(o => o.includes('Varaha'))).toBe(true)
@@ -87,13 +81,15 @@ test.describe('Lead Modal', () => {
 
   test('modal closes on X button', async ({ page }) => {
     await page.locator('#home button.btn-gold').first().click()
-    await page.waitForTimeout(400)
+    await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 5000 })
+    await page.waitForTimeout(500)
     await page.locator('[class*="closeBtn"]').first().click()
     await expect(page.locator('[class*="overlay"]').first()).not.toBeVisible({ timeout: 5000 })
   })
 
   test('Book Site Visit modal has date field', async ({ page }) => {
     await page.locator('button:has-text("Book Site Visit"), button:has-text("Site Visit")').first().click()
+    await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 5000 })
     await page.waitForTimeout(400)
     await expect(page.locator('input[type="date"]').first()).toBeVisible()
   })

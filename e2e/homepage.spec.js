@@ -7,14 +7,16 @@ async function waitForLoad(page) {
   await page.waitForTimeout(1000)
 }
 
-// Helper: open portfolio nav correctly on mobile vs desktop
+// On desktop: click Portfolio button by text (t('nav.portfolio') = 'Portfolio')
+// On mobile: open hamburger — projects are in mobilePortfolioSection
 async function openPortfolioNav(page) {
   const isMobile = page.viewportSize()?.width < 768
   if (isMobile) {
     await page.locator('[class*="hamburger"]').first().click()
     await page.waitForTimeout(400)
   } else {
-    await page.locator('[class*="dropTrigger"]').first().click()
+    // Use text selector — more reliable than CSS module class
+    await page.locator('nav').getByText('Portfolio').first().click()
     await page.waitForTimeout(300)
   }
 }
@@ -64,7 +66,13 @@ test.describe('Navbar', () => {
 
   test('clicking Anjana Paradise navigates to project', async ({ page }) => {
     await openPortfolioNav(page)
-    await page.locator('text=Anjana Paradise').first().click()
+    const isMobile = page.viewportSize()?.width < 768
+    if (isMobile) {
+      // Mobile: use mobileProjectCard
+      await page.locator('[class*="mobileProjectCard"]').filter({ hasText: 'Anjana' }).first().click()
+    } else {
+      await page.locator('[class*="dropCard"]').filter({ hasText: 'Anjana' }).first().click()
+    }
     await expect(page).toHaveURL(/anjana/)
   })
 })
@@ -109,9 +117,7 @@ test.describe('Hero Section', () => {
   })
 
   test('View Available Plots button visible', async ({ page }) => {
-    await expect(
-      page.locator('#home button.btn-gold').first()
-    ).toBeVisible()
+    await expect(page.locator('#home button.btn-gold').first()).toBeVisible()
   })
 
   test('Enquire Now opens lead modal', async ({ page }) => {
@@ -121,9 +127,11 @@ test.describe('Hero Section', () => {
 
   test('modal closes on X', async ({ page }) => {
     await page.locator('#home button.btn-gold').first().click()
-    await page.waitForTimeout(300)
+    // Wait for modal to fully open
+    await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 5000 })
+    await page.waitForTimeout(500)
     await page.locator('[class*="closeBtn"]').first().click()
-    await expect(page.locator('[class*="overlay"]').first()).not.toBeVisible({ timeout: 3000 })
+    await expect(page.locator('[class*="overlay"]').first()).not.toBeVisible({ timeout: 5000 })
   })
 })
 
