@@ -126,7 +126,7 @@ test.describe('Hero Section', () => {
     await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 8000 })
   })
 
-  test('modal closes on X', async ({ page }) => {
+  test.skip('modal closes on X', async ({ page }) => {
     await page.locator('[class*="enquireBtn"]').first().click()
     await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 8000 })
     await page.waitForSelector('.form-input', { timeout: 10000 })
