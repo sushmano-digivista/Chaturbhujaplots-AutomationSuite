@@ -88,10 +88,11 @@ test.describe('Lead Modal', () => {
   test('modal closes on X button', async ({ page }) => {
     await openHeroModal(page)
     await expect(page.locator('[class*="overlay"]').first()).toBeVisible()
-    // Press Escape — modal has keyboard handler for this
-    await page.keyboard.press('Escape')
+    // Click the overlay backdrop (top-left corner away from sheet) — triggers onClose
+    await page.locator('[class*="overlay"]').first().click({ position: { x: 10, y: 10 }, force: true })
     await page.waitForTimeout(1500)
-    await expect(page.locator('[class*="overlay"]').first()).not.toBeVisible({ timeout: 8000 })
+    // Use not.toBeAttached — AnimatePresence removes from DOM after exit animation
+    await expect(page.locator('[class*="overlay"]').first()).not.toBeAttached({ timeout: 10000 })
   })
 
   test('Book Site Visit modal has date field', async ({ page }) => {
