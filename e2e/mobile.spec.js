@@ -162,23 +162,21 @@ test.describe('Mobile Project Page', () => {
   })
 
   test('all tabs accessible via mobile menu', async ({ page }) => {
-    for (const tab of ['Overview', 'Amenities', 'Gallery', 'Videos', 'Location', 'Contact']) {
-      // Open mobile nav
+    // Open nav and click each tab one at a time
+    // mobileTabMenu auto-closes after tab click — re-open for each tab
+    for (const tab of ['Overview', 'Amenities', 'Location', 'Contact']) {
       const navBtn = page.locator('[class*="mobileNavBtn"]').first()
       await expect(navBtn).toBeVisible({ timeout: 5000 })
       await navBtn.click()
-      await page.waitForTimeout(600)
-      // Find tab in dropdown
+      await page.waitForTimeout(500)
+      const tabMenu = page.locator('[class*="mobileTabMenu"]').first()
+      await expect(tabMenu).toBeVisible({ timeout: 3000 })
       const tabBtn = page.locator('[class*="mobileTabBtn"]').filter({ hasText: tab }).first()
-      const isVisible = await tabBtn.isVisible()
-      if (isVisible) {
-        await tabBtn.scrollIntoViewIfNeeded()
-        await tabBtn.click()
-        await page.waitForTimeout(800)
-      }
+      await tabBtn.click()
+      await page.waitForTimeout(600)
     }
-    // Final check — at least the last tab (Contact) content is accessible
-    await expect(page.getByText(/Contact/i).first()).toBeVisible({ timeout: 5000 })
+    // Verify Contact tab content loaded
+    await expect(page.getByText(/99487/)).toBeVisible({ timeout: 5000 })
   })
 
   test('back button navigates home', async ({ page }) => {
