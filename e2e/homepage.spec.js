@@ -121,16 +121,14 @@ test.describe('Hero Section', () => {
   })
 
   test('Enquire Now opens lead modal', async ({ page }) => {
-    // btn-gold scrolls to plots — btn-outline (Book Site Visit) opens the modal
-    await page.locator('#home button.btn-outline').first().click()
+    // Use navbar ENQUIRE NOW button — always visible on desktop
+    await page.locator('[class*="enquireBtn"]').first().click()
     await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('modal closes on X', async ({ page }) => {
-    // Use sticky bar Enquire button — most reliable modal trigger
-    await page.locator('[class*="sbMain"]').first().click()
+    await page.locator('[class*="enquireBtn"]').first().click()
     await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 8000 })
-    // Wait for Framer Motion spring animation + form render
     await page.waitForSelector('.form-input', { timeout: 10000 })
     await page.waitForTimeout(300)
     const closeBtn = page.locator('button[aria-label="Close"]').first()
