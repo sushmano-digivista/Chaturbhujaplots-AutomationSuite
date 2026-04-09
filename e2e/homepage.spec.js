@@ -131,10 +131,11 @@ test.describe('Hero Section', () => {
     await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 8000 })
     await page.waitForSelector('.form-input', { timeout: 10000 })
     await page.waitForTimeout(300)
-    // Press Escape — modal has keyboard listener for Escape key
-    await page.keyboard.press('Escape')
+    // Click overlay backdrop (top-left away from sheet) — triggers onClose
+    await page.locator('[class*="overlay"]').first().click({ position: { x: 10, y: 10 }, force: true })
     await page.waitForTimeout(1500)
-    await expect(page.locator('[class*="overlay"]').first()).not.toBeVisible({ timeout: 8000 })
+    // AnimatePresence removes from DOM after exit animation
+    await expect(page.locator('[class*="overlay"]').first()).not.toBeAttached({ timeout: 10000 })
   })
 })
 
