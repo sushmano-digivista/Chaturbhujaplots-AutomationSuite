@@ -13,10 +13,12 @@ async function scrollToContact(page) {
 }
 
 async function openHeroModal(page) {
-  // btn-gold scrolls to plots — use btn-outline (Book Site Visit) which opens modal
-  await page.locator('#home button.btn-outline').first().click()
+  // btn-gold scrolls to plots — use Enquire button from sticky bar (most reliable)
+  await page.locator('[class*="sbMain"]').first().click()
   await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 8000 })
-  await page.waitForTimeout(800)
+  // Wait for Framer Motion spring animation to complete + form to render
+  await page.waitForSelector('.form-input', { timeout: 10000 })
+  await page.waitForTimeout(500)
 }
 
 // ── Contact Section ───────────────────────────────────────────────────────────
@@ -66,16 +68,13 @@ test.describe('Lead Modal', () => {
 
   test('modal has name and phone fields', async ({ page }) => {
     await openHeroModal(page)
-    // Modal uses createPortal — inputs render at body level, not inside overlay div
-    // form-input is a global CSS class used on all inputs/selects in modal
-    await expect(page.locator('.form-input').first()).toBeVisible({ timeout: 8000 })
+    // Modal uses createPortal — .form-input is global class on all inputs
     const count = await page.locator('.form-input').count()
     expect(count).toBeGreaterThanOrEqual(2)
   })
 
   test('modal has project dropdown with all 4 projects', async ({ page }) => {
     await openHeroModal(page)
-    // Project select uses global .form-input class
     const sel = page.locator('select.form-input').first()
     await expect(sel).toBeVisible({ timeout: 8000 })
     const options = await sel.locator('option').allTextContents()
@@ -85,11 +84,10 @@ test.describe('Lead Modal', () => {
 
   test('modal closes on X button', async ({ page }) => {
     await openHeroModal(page)
-    // closeBtn has aria-label="Close" — modal uses createPortal so it's at body level
     const closeBtn = page.locator('button[aria-label="Close"]').first()
     await expect(closeBtn).toBeVisible({ timeout: 5000 })
     await closeBtn.click()
-    await page.waitForTimeout(600)
+    await page.waitForTimeout(800)
     await expect(page.locator('[class*="overlay"]').first()).not.toBeVisible({ timeout: 8000 })
   })
 
