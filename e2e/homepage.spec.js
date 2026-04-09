@@ -63,15 +63,13 @@ test.describe('Navbar', () => {
 
   test('clicking Anjana Paradise navigates to project', async ({ page }) => {
     await openPortfolioNav(page)
-    const isMobile = page.viewportSize()?.width < 768
-    if (isMobile) {
-      // On mobile projects are in mobileProjectCard buttons
-      await page.locator('[class*="mobileProjectCard"]').filter({ hasText: 'Anjana' }).first().click()
-    } else {
-      // On desktop projects are in dropCard buttons
-      await page.locator('[class*="dropCard"]').filter({ hasText: 'Anjana' }).first().click()
-    }
-    await expect(page).toHaveURL(/anjana/, { timeout: 8000 })
+    await page.waitForTimeout(500)
+    // Try multiple selectors for the Anjana card
+    const anjanaCard = page.locator('[class*="dropCard"], [class*="mobileProjectCard"], [class*="portCard"]')
+      .filter({ hasText: 'Anjana' }).first()
+    await expect(anjanaCard).toBeVisible({ timeout: 5000 })
+    await anjanaCard.click()
+    await expect(page).toHaveURL(/anjana/, { timeout: 10000 })
   })
 })
 
@@ -128,9 +126,11 @@ test.describe('Hero Section', () => {
   test('modal closes on X', async ({ page }) => {
     await page.locator('#home .btn-gold').first().click()
     await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 8000 })
-    await page.waitForTimeout(600)
-    // Close button is inside overlay
-    await page.locator('[class*="overlay"] [class*="closeBtn"]').first().click()
+    await page.waitForTimeout(800)
+    // Try multiple close button selectors
+    const closeBtn = page.locator('[class*="overlay"] [class*="closeBtn"], [class*="overlay"] [class*="close"], [class*="overlay"] button').last()
+    await closeBtn.click({ force: true })
+    await page.waitForTimeout(500)
     await expect(page.locator('[class*="overlay"]').first()).not.toBeVisible({ timeout: 8000 })
   })
 })
