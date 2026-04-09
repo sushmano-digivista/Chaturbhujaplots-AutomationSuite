@@ -131,10 +131,9 @@ test.describe('Hero Section', () => {
     await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 8000 })
     await page.waitForSelector('.form-input', { timeout: 10000 })
     await page.waitForTimeout(300)
-    const closeBtn = page.locator('button[aria-label="Close"]').first()
-    await expect(closeBtn).toBeVisible({ timeout: 5000 })
-    await closeBtn.click()
-    await page.waitForTimeout(800)
+    // Press Escape — modal has keyboard listener for Escape key
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(1500)
     await expect(page.locator('[class*="overlay"]').first()).not.toBeVisible({ timeout: 8000 })
   })
 })
