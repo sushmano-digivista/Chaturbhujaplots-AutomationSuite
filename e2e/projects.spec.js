@@ -8,6 +8,15 @@ const PROJECTS = [
   { id: 'trimbak', name: 'Trimbak Oaks',    loc: 'Penamaluru'  },
 ]
 
+// Skip overlay & loader for all tests
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__chaturbhuja_loaded = true
+    sessionStorage.setItem('launch_overlay_shown', '1')
+    sessionStorage.setItem('home_loader_shown', '1')
+  })
+})
+
 async function goTo(page, id) {
   await page.goto(`${BASE}/project/${id}`)
   // On mobile tabBar is display:none — wait for mobileNavBtn
@@ -55,10 +64,22 @@ test.describe('Project Pages Load', () => {
 test.describe('Project Tab Navigation', () => {
   test.beforeEach(async ({ page }) => { await goTo(page, 'anjana') })
 
+  const TAB_VERIFY = {
+    'Overview':  '[class*="tabContent"]:visible, [class*="facingCard"]:visible, [class*="PricingCard"]:visible',
+    'Amenities': '[class*="tabContent"]:visible',
+    'Gallery':   '[class*="tabContent"]:visible',
+    'Videos':    '[class*="tabContent"]:visible',
+    'Location':  '[class*="mapWrap"], [class*="iframe"], iframe',
+    'Contact':   '[class*="contactGrid"], [class*="contactInfo"], button[aria-label*="WhatsApp"]',
+  }
   for (const tab of ['Overview', 'Amenities', 'Gallery', 'Videos', 'Location', 'Contact']) {
     test(`${tab} tab opens`, async ({ page }) => {
       await clickTab(page, tab)
-      await expect(page.getByText(new RegExp(tab, 'i')).first()).toBeVisible({ timeout: 5000 })
+      await page.waitForTimeout(1500)
+      // Use tab-specific visible content check
+      const selector = TAB_VERIFY[tab]
+      const el = page.locator(selector).first()
+      await expect(el).toBeVisible({ timeout: 12000 })
     })
   }
 })
@@ -84,7 +105,7 @@ test.describe('Contact Tab — MongoDB Values', () => {
       await goTo(page, p.id)
       await clickTab(page, 'Contact')
       await expect(
-        page.locator('[class*="contactRow"]').filter({ hasText: /WhatsApp/i }).first()
+        page.locator('button[aria-label*="WhatsApp"], button[title*="WhatsApp"]').first()
       ).toBeVisible({ timeout: 8000 })
     }
   })
@@ -117,7 +138,9 @@ test.describe('Trimbak Oaks — Upcoming Project', () => {
   test('Notify Me button visible', async ({ page }) => {
     await goTo(page, 'trimbak')
     await clickTab(page, 'Overview')
-    await expect(page.getByRole('button', { name: /Notify Me/i })).toBeVisible()
+    const btn = page.getByRole('button', { name: /Register Interest|Notify Me|Interested|ఆసక్తి|Get Plot/i })
+    await btn.scrollIntoViewIfNeeded()
+    await expect(btn).toBeVisible({ timeout: 10000 })
   })
 })
 

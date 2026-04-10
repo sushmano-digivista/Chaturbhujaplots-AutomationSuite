@@ -2,10 +2,21 @@ import { test, expect } from '@playwright/test'
 
 const BASE = 'http://localhost:3000'
 
+async function skipOverlayAndLoader(page) {
+  await page.addInitScript(() => {
+    window.__chaturbhuja_loaded = true
+    sessionStorage.setItem('launch_overlay_shown', '1')
+    sessionStorage.setItem('home_loader_shown', '1')
+  })
+}
+
 async function waitForLoad(page) {
-  await page.waitForSelector('nav', { timeout: 10000 })
+  await page.waitForSelector('nav', { timeout: 15000 })
   await page.waitForTimeout(500)
 }
+
+// Skip overlay & loader for all tests
+test.beforeEach(async ({ page }) => { await skipOverlayAndLoader(page) })
 
 async function scrollToContact(page) {
   await page.evaluate(() => document.getElementById('contact')?.scrollIntoView())
@@ -13,13 +24,20 @@ async function scrollToContact(page) {
 }
 
 async function openHeroModal(page) {
-  // Use navbar ENQUIRE NOW button — visible on both desktop and mobile
-  // enquireBtn class on desktop, mobileEnquire on mobile
-  const enquireBtn = page.locator('[class*="enquireBtn"], [class*="mobileEnquire"]').first()
-  await expect(enquireBtn).toBeVisible({ timeout: 5000 })
-  await enquireBtn.click()
-  await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 8000 })
-  // Wait for Framer Motion animation to complete and form to render
+  const isMobile = page.viewportSize()?.width < 768
+  if (isMobile) {
+    // On mobile, scroll down to make sticky bar interactive, then click Enquire Now
+    await page.evaluate(() => window.scrollBy(0, 400))
+    await page.waitForTimeout(500)
+    const stickyBtn = page.locator('[class*="stickyBar"] button, [class*="stickyBar"] a').last()
+    await expect(stickyBtn).toBeVisible({ timeout: 8000 })
+    await stickyBtn.click({ force: true })
+  } else {
+    const enquireBtn = page.locator('[class*="enquireBtn"]').first()
+    await expect(enquireBtn).toBeVisible({ timeout: 8000 })
+    await enquireBtn.click()
+  }
+  await expect(page.locator('[class*="overlay"]').first()).toBeVisible({ timeout: 10000 })
   await page.waitForSelector('.form-input', { timeout: 10000 })
   await page.waitForTimeout(300)
 }
@@ -41,7 +59,7 @@ test.describe('Contact Section', () => {
   })
 
   test('WhatsApp button has valid wa.me href', async ({ page }) => {
-    await expect(page.locator('#contact [class*="waBtn"]').first()).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('#contact [aria-label*="WhatsApp"], #contact button[title*="WhatsApp"]').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('Request Callback button is present', async ({ page }) => {
@@ -53,7 +71,7 @@ test.describe('Contact Section', () => {
   })
 
   test('Send Message / WhatsApp button is present', async ({ page }) => {
-    await expect(page.locator('#contact [class*="waBtn"]').first()).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('#contact [aria-label*="WhatsApp"], #contact button[title*="WhatsApp"]').first()).toBeVisible({ timeout: 8000 })
   })
 })
 

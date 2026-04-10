@@ -4,10 +4,21 @@ const BASE = 'http://localhost:3000'
 
 test.use({ viewport: { width: 390, height: 844 } })
 
-async function waitForLoad(page) {
-  await page.waitForSelector('nav', { timeout: 10000 })
-  await page.waitForTimeout(1000)
+async function skipOverlayAndLoader(page) {
+  await page.addInitScript(() => {
+    window.__chaturbhuja_loaded = true
+    sessionStorage.setItem('launch_overlay_shown', '1')
+    sessionStorage.setItem('home_loader_shown', '1')
+  })
 }
+
+async function waitForLoad(page) {
+  await page.waitForSelector('nav', { timeout: 15000 })
+  await page.waitForTimeout(500)
+}
+
+// Skip overlay & loader for all tests
+test.beforeEach(async ({ page }) => { await skipOverlayAndLoader(page) })
 
 async function openMobileMenu(page) {
   await page.locator('[class*="hamburger"]').first().click()
