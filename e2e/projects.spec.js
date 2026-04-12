@@ -127,18 +127,18 @@ test.describe('Contact Tab — MongoDB Values', () => {
   })
 })
 
-// ── 4. Trimbak Oaks — Upcoming ────────────────────────────────────────────────
-test.describe('Trimbak Oaks — Upcoming Project', () => {
-  test('shows Coming Soon in Overview', async ({ page }) => {
+// ── 4. Trimbak Oaks — New Launch (Phase I + II) ──────────────────────────────
+test.describe('Trimbak Oaks — New Launch', () => {
+  test('shows pricing in Overview', async ({ page }) => {
     await goTo(page, 'trimbak')
     await clickTab(page, 'Overview')
-    await expect(page.getByText(/Coming Soon/i).first()).toBeVisible()
+    await expect(page.getByText(/28,999|28,499|Phase/i).first()).toBeVisible({ timeout: 10000 })
   })
 
-  test('Notify Me button visible', async ({ page }) => {
+  test('Get Plot Details button visible', async ({ page }) => {
     await goTo(page, 'trimbak')
     await clickTab(page, 'Overview')
-    const btn = page.getByRole('button', { name: /Register Interest|Notify Me|Interested|ఆసక్తి|Get Plot/i })
+    const btn = page.getByRole('button', { name: /Get Detailed|Interested|ప్లాట్|Plot Information/i })
     await btn.scrollIntoViewIfNeeded()
     await expect(btn).toBeVisible({ timeout: 10000 })
   })
